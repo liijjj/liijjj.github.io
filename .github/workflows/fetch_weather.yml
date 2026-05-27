@@ -2,47 +2,62 @@ name: 自动更新天气静态缓存 (15m/1h 混合周期)
 
 on:
   schedule:
-    - cron: '*/15 * * * *' # 每 15 分钟自动运行一次
-  workflow_dispatch: # 允许在 GitHub 页面上手动点击运行
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - 'monitor/**/output/**' # 防死循环
+    # 每 15 分钟运行一次（注：GitHub Actions 的定时器可能会有几分钟延迟，属于正常现象）
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # 允许你在 GitHub 页面上点击 "Run workflow" 手动强制触发更新
+
+permissions:
+  contents: write # 赋予 Actions 机器人向你的仓库提交和推送代码的权限
 
 jobs:
-  deploy-weather:
+  update-weather-data:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 检出代码
+    # 1. 检出仓库代码
+    - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: 创建输出多级目录
-      run: |
-        # 创建专属的隔离输出文件夹，确保 curl 写入时路径存在
-        mkdir -p monitor/weather/output
+    # 2. 设置环境（以 Python 为例，如果你使用的是 Node.js，可自行替换为 setup-node）
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        cache: 'pip' # 自动缓存依赖，加速后续运行
 
-    - name: 运行天气采集并生成 data.json
+    # 3. 安装依赖（如果你的抓取脚本需要 requests 等库）
+    - name: Install Dependencies
       run: |
-        # =========================================================================
-        # 【极其重要】请把下方最后的 URL 替换为你真实的 API 请求地址（包含你的 Token/Key）
-        # 现在的接口会将获取到的庞大静态数据，精准打包并直接写入我们规划好的新路径下。
-        # =========================================================================
-        curl -s "https://hftianqi.com/api/your_real_weather_url_here" -o monitor/weather/output/data.json
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; else pip install requests; fi
 
-    - name: 提交并推送数据到 GitHub Pages
+    # 4. 运行你的天气与空气质量抓取脚本
+    # 提示：请确保你的脚本（如 fetch.py）将生成的 json 文件输出到 main/monitor/weather/quzhou/ 目录下
+    - name: Run Weather Fetch Script
+      env:
+        AQICN_TOKEN: ${{ secrets.AQICN_TOKEN }}
+        QWEATHER_DOMAIN: ${{ secrets.QWEATHER_DOMAIN }}
+        QWEATHER_KEY: ${{ secrets.QWEATHER_KEY }}
       run: |
-        git config --local user.email "action@github.com"
+        python fetch.py 
+        # 如果你的脚本在根目录，且输出路径在脚本里写死了，直接运行即可。
+        # 如果需要在 Actions 里强行移动，可以取消下面这两行的注释：
+        # mkdir -p main/monitor/weather/quzhou/
+        # mv -f *.json main/monitor/weather/quzhou/ 2>/dev/null || true
+
+    # 5. 自动将最新的数据提交并推送到 GitHub 仓库
+    - name: Commit and Push Changes
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         
-        # 只把 monitor 目录下的数据变化加进暂存区
-        git add monitor/
+        # 仅暂存和检查该衢州天气目录下的 JSON 变更，避免误触其他文件
+        git add main/monitor/weather/quzhou/*.json
         
-        # 检查是否有新数据，有就提交，没有就跳过
-        if git diff --cached --quiet; then
-          echo "天气数据未发生改变，跳过本次 Commit 提交。"
+        # 检查是否有文件更新，防止没有数据变化时 commit 报错导致 workflow 挂掉
+        if git diff --staged --quiet; then
+          echo "数据未发生变化，跳过本次提交。"
         else
-          git commit -m "自动更新天气静态缓存 (Monitor System)"
-          git push
+          git commit -m "🤖 自动更新天气静态缓存 (${{ github.workflow }})"
+          git push origin main
         fi
