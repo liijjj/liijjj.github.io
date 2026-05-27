@@ -1,49 +1,55 @@
-name: Automated Weather Data Fetcher
+import os
+import time
+import sys
+import requests
 
-on:
-  schedule:
-    # 周期性定时器：每15分钟触发一次 (对应分钟为：0, 15, 30, 45)
-    # 此时区为 UTC，对应的北京时间同样为整点、15分、30分、45分
-    - cron: '*/15 * * * *'
-  workflow_dispatch: # 允许你在 GitHub 页面上手动点击运行测试
+# 创建缓存输出/缓存目录
+output_dir = "monitor/weather/quzhou/output"
+os.makedirs(output_dir, exist_ok=True)
 
-permissions:
-  contents: write # 赋予工作流向仓库提交代码和更新 JSON 的权限
+# 从 GitHub Secrets 中读取 Key
+qweather_key = os.environ.get("QWEATHER_KEY")
+qweather_domain = os.environ.get("QWEATHER_DOMAIN")
 
-jobs:
-  fetch-and-deploy:
-    runs-on: ubuntu-latest
+if not qweather_key or not qweather_domain:
+    print("❌ 错误: GitHub Secrets 中的 QWEATHER_KEY 或 QWEATHER_DOMAIN 未读取到！")
+    sys.exit(1)
 
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+timestamp = int(time.time() * 1000)
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-node-version: '3.10'
-
-    - name: Install Dependencies
-      run: |
-        pip install requests
-
-    - name: Execute Data Fetching Script
-      env:
-        QWEATHER_KEY: ${{ secrets.QWEATHER_KEY }}
-        AQICN_TOKEN: ${{ secrets.AQICN_TOKEN }}
-      run: |
-        python monitor/weather/quzhou/fetch_data.py
-
-    - name: Commit and Push Updates
-      run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+def save_json(url, filename):
+    print(f"🚀 正在请求: {url}")
+    try:
+        response = requests.get(url, timeout=15)
+        # 核心修复：强制指定编码，确保自动处理商业版专属域名的 Gzip 压缩
+        response.encoding = 'utf-8' 
         
-        # 检查 output 目录内是否有文件变更
-        git add monitor/weather/quzhou/output/
-        if git diff --staged --quiet; then
-          echo "数据未发生实质变化，跳过本次提交。"
-        else
-          git commit -m "🤖 自动跑批：同步最新气象及空气质量数据 [$(date -d '8 hours' +'%Y-%m-%d %H:%M:%S') CST]"
-          git push origin main
-        fi
+        if response.status_code == 200 and response.text.strip().startswith('{'):
+            with open(os.path.join(output_dir, filename), "w", encoding="utf-8") as f:
+                f.write(response.text)
+            print(f"✅ 成功更新并写入文件: {filename}")
+        else:
+            print(f"❌ 请求失败 {filename}: 状态码 {response.status_code}，内容: {response.text[:100]}")
+            # 核心修复：让程序在失败时崩溃，以便在 GitHub Actions 留下红叉和报错日志
+            sys.exit(1)
+    except Exception as e:
+        print(f"💥 异常 {filename}: {str(e)}")
+        sys.exit(1)
+
+# 1. 抓取和风 24小时预报
+url_24h = f"https://{qweather_domain}/v7/weather/24h?location=118.865,28.98&key={qweather_key}&_t={timestamp}"
+save_json(url_24h, "weather_24h.json")
+
+# 2. 抓取和风 空气质量逐小时预报 (商业版经典 v1 接口)
+url_aqi = f"https://{qweather_domain}/airquality/v1/hourly/28.98/118.865?key={qweather_key}&_t={timestamp}"
+save_json(url_aqi, "aqi_hourly.json")
+
+# 3. 抓取和风 5分钟级降水
+url_minutely = f"https://{qweather_domain}/v7/minutely/5m?location=118.865,28.98&key={qweather_key}&_t={timestamp}"
+save_json(url_minutely, "weather_minutely.json")
+
+# 4. 抓取和风 灾害预警 (商业版经典 v1 接口)
+url_alert = f"https://{qweather_domain}/weatheralert/v1/current/28.98/118.865?key={qweather_key}&_t={timestamp}"
+save_json(url_alert, "weather_alert.json")
+
+print("\n🎉 所有天气数据同步任务顺利完成！")
