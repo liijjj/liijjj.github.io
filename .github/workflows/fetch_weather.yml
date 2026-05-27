@@ -1,67 +1,66 @@
-name: Fetch Weather Data Clockwork
+name: 自动更新天气静态缓存 (15m/1h 混合周期)
 
 on:
   schedule:
-    - cron: '*/15 * * * *' # 每隔 15 分钟自动执行一次 (如 0分, 15分, 30分, 45分)
-  workflow_dispatch: # 允许手动触发测试
-
-permissions:
-  contents: write
+    # 你的定时任务配置（保持原样即可，例如每15分钟触发一次）
+    - cron: '*/15 * * * *' 
+  workflow_dispatch: # 允许你在 GitHub 页面上手动点击运行
+  push:
+    branches:
+      - main
+    paths-ignore:
+      # 【核心改动】防死循环：忽略当前以及未来所有监控子目录下的 output 变动
+      # 这样机器人提交数据时，就不会再次触发工作流导致死循环
+      - 'monitor/**/output/**'
 
 jobs:
-  update-cache:
+  deploy-weather:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: 检出代码
+      uses: actions/checkout@v4
 
-      - name: Fetch and Merge Climate Data
-        run: |
-          echo "开始执行15分钟定时任务..."
-          
-          # 获取当前时间（当前执行时的分钟数，如 00, 15, 30, 45）
-          CURRENT_MIN=$(date +%M)
-          echo "当前执行时间（分钟）：$CURRENT_MIN"
+    - name: 设置 Python 环境
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+        # 如果需要缓存依赖，可以开启：
+        # cache: 'pip'
 
-          # =======================================================
-          # 1. 【高频区】每15分钟必抓的数据：分钟级降水
-          # =======================================================
-          curl -s "https://${{ secrets.QWEATHER_DOMAIN }}/v7/minutely/5m?location=118.865,28.98&key=${{ secrets.QWEATHER_KEY }}" > minutely.json
+    - name: 安装 Python 依赖
+      run: |
+        if [ -f requirements.txt ]; then
+          pip install -r requirements.txt
+        else
+          # 如果你直接在脚本里引入了 requests 或其它第三方库，请在此处补充安装
+          # 比如：pip install requests hmac hashlib
+          echo "未检测到 requirements.txt，跳过安装或按需在此处补充 pip install"
+        fi
 
-          # =======================================================
-          # 2. 【低频区】只有在整点（00分）或者本地缺失缓存时，才抓取长周期数据
-          # =======================================================
-          if [ "$CURRENT_MIN" = "00" ] || [ ! -f "weather_24h.json" ] || [ ! -f "aqi_hourly.json" ] || [ ! -f "alert.json" ]; then
-              echo "⏰ 触发整点/初始化抓取：更新长周期天气数据..."
-              curl -s "https://${{ secrets.QWEATHER_DOMAIN }}/v7/weather/24h?location=118.865,28.98&key=${{ secrets.QWEATHER_KEY }}" > weather_24h.json
-              curl -s "https://${{ secrets.QWEATHER_DOMAIN }}/airquality/v1/hourly/28.98/118.865?key=${{ secrets.QWEATHER_KEY }}" > aqi_hourly.json
-              curl -s "https://${{ secrets.QWEATHER_DOMAIN }}/weatheralert/v1/current/28.98/118.865?key=${{ secrets.QWEATHER_KEY }}" > alert.json
-          else
-              echo "☕ 未到整点，重用上一次生成的常规天气缓存文件。"
-          fi
+    - name: 运行天气采集脚本
+      env:
+        # 如果你的和风天气 KEY 或其它 Token 放在了 GitHub Secrets 里，在这里传递给环境变量
+        # QWEATHER_KEY: ${{ secrets.QWEATHER_KEY }}
+        pass
+      run: |
+        # 【核心改动】请将 your_script_name.py 替换为你真实的 Python 脚本文件名
+        # 如果你的 Python 脚本也移到了 monitor/weather/ 目录下，路径请改为 python monitor/weather/your_script_name.py
+        python your_script_name.py
 
-          # =======================================================
-          # 3. 动态组装最新的 data.json，并打上当前更新的时间戳
-          # =======================================================
-          UPDATE_TIME=$(date +"%Y-%m-%d %H:%M:%S")
-          
-          echo "{" > data.json
-          echo "\"lastUpdated\": \"${UPDATE_TIME}\"," >> data.json
-          echo "\"aqicnToken\": \"${{ secrets.AQICN_TOKEN }}\"," >> data.json
-          echo "\"weather24h\": $(cat weather_24h.json)," >> data.json
-          echo "\"aqiHourly\": $(cat aqi_hourly.json)," >> data.json
-          echo "\"minutely\": $(cat minutely.json)," >> data.json
-          echo "\"alert\": $(cat alert.json)" >> data.json
-          echo "}" >> data.json
-          
-          # 只删除高频生成的临时文件，长周期文件的 json 留着下个 15 分钟复用
-          rm minutely.json
-          echo "数据合并完成！最新更新时间：$UPDATE_TIME"
-
-      - name: Commit and Push changes
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add data.json weather_24h.json aqi_hourly.json alert.json
-          git diff-index --quiet HEAD || git commit -m "🤖 自动更新天气静态缓存 (15m/1h 混合周期)"
+    - name: 提交并推送数据到 GitHub Pages
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "github-actions[bot]"
+        
+        # 【核心改动】极其关键：只暂存 monitor 目录。
+        # 即使未来引入 server 监控等，只要数据落在 monitor 内部，都会在这里被一并安全捕获
+        git add monitor/
+        
+        # 检查暂存区是否有文件产生真正的变化，避免空提交引发 GitHub 报错
+        if git diff --cached --quiet; then
+          echo "天气数据未发生改变，跳过本次 Commit 提交。"
+        else
+          git commit -m "自动更新天气静态缓存 (Monitor System)"
           git push
+        fi
