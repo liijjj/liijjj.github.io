@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>综合数据监控面板 (Data Dash)</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 0;
+            padding: 24px;
+        }
+        header {
+            margin-bottom: 24px;
+            border-bottom: 1px solid #e0e4ec;
+            padding-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 { margin: 0; font-size: 24px; color: #1e293b; }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+        }
+        .wide-card { grid-column: span 2; }
+        @media (max-width: 768px) { .wide-card { grid-column: span 1; } }
+
+        .api-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            overflow: visible;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s;
+            position: relative;
+        }
+        .api-card:hover { transform: translateY(-2px); }
+
+        .card-header {
+            padding: 14px 16px;
+            background: #fafbfc;
+            border-bottom: 1px solid #edf2f7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+        }
+        .card-title { font-size: 15px; font-weight: 600; color: #475569; }
+        .card-meta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #64748b; font-weight: 500; }
+        
+        .card-body { padding: 16px; flex-grow: 1; background: #fff; min-height: 240px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;}
+
+        #map { width: 100%; height: 240px; border-radius: 6px; z-index: 1; }
+        .chart-container { width: 100%; height: 240px; position: relative; }
+
+        .alert-board { width: 100%;height: 100%; max-height: 240px; overflow-y: auto; position: relative; }
+        .alert-item { padding: 10px 12px; border-bottom: 1px dashed #e2e8f0; position: relative; }
+        .alert-item:last-child { border-bottom: none; }
+        .alert-time { font-size: 11px; color: #94a3b8; margin-bottom: 4px; font-weight: bold;}
+        .alert-headline { font-size: 13px; color: #334155; cursor: help; text-decoration: underline dotted #cbd5e1; line-height: 1.4; }
+        .alert-headline:hover { color: #2563eb; }
+
+        .alert-headline .tooltip-box {
+            visibility: hidden; 
+            width: 290px; 
+            max-height: 180px;
+            overflow-y: auto; 
+            background-color: rgba(15, 23, 42, 0.98); 
+            color: #f8fafc;
+            text-align: left; 
+            border-radius: 8px; 
+            padding: 12px; 
+            position: absolute; 
+            z-index: 99999; 
+            top: 100%; 
+            left: 0; 
+            opacity: 0; 
+            transition: opacity 0.15s, transform 0.15s;
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -4px rgba(0,0,0,0.5); 
+            font-size: 12px; 
+            font-weight: normal;
+            line-height: 1.6; 
+            pointer-events: auto; 
+            text-decoration: none !important;
+            border: 1px solid #475569;
+        }
+        .alert-headline:hover .tooltip-box { 
+            visibility: visible; 
+            opacity: 1;
+            transform: translateY(4px);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>数据看板中心</h1>
+        <div style="font-size: 12px; color: #64748b; font-weight: bold; background: #e2e8f0; padding: 4px 8px; border-radius: 4px;">更新托管：GitHub Actions 自动</div>
+    </header>
+
+    <div class="dashboard-grid">
+        
+        <div class="api-card">
+            <div class="card-header">
+                <span class="card-title">衢州aqicn瓦片地图</span>
+                <div class="card-meta">
+                    <span id="time-map">加载中...</span>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 10px;"><div id="map"></div></div>
+        </div>
+
+        <div class="api-card wide-card">
+            <div class="card-header">
+                <span class="card-title">和风逐小时天气预报</span>
+                <div class="card-meta">
+                    <span id="time-chart">加载中...</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="weatherChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="api-card">
+            <div class="card-header">
+                <span class="card-title">和风分钟级降水</span>
+                <div class="card-meta">
+                    <span id="time-minutely">加载中...</span>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 16px;">
+                <div class="chart-container" style="height: 240px;">
+                    <canvas id="minutelyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="api-card">
+            <div class="card-header">
+                <span class="card-title">和风极端天气预警</span>
+                <div class="card-meta">
+                    <span id="time-alert">加载中...</span>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 10px;">
+                <div class="alert-board" id="alert-board-content">正在载入预警数据...</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 注册 ChartDataLabels 插件
+        Chart.register(ChartDataLabels);
+
+        var mymap = null;
+        var myChart = null; 
+        var minutelyChart = null;
+
+        function formatWeatherTime(rawTime) {
+            var month = rawTime.substring(5, 7);
+            var day = rawTime.substring(8, 10);
+            var hourMin = rawTime.substring(11, 16);
+            return `${month}月${day}日 ${hourMin}`;
+        }
+
+        function formatMinutelyTime(rawTime) {
+            return rawTime.substring(11, 16);
+        }
+
+        function parseToTimestamp(zuluTimeString) {
+            return new Date(zuluTimeString).getTime();
+        }
+
+        function checkAlertTriggerProject(labelStr, precipVal, weatherText, aqiVal, aqiCategory, tempVal) {
+            if (!labelStr) return "";
+            var isTargetTime = labelStr.includes('08:00') || labelStr.includes('12:00') || labelStr.includes('20:00') || labelStr.includes('21:00');
+            if (isTargetTime) {
+                var alerts = [];
+                if (precipVal > 0 && weatherText) alerts.push(weatherText);
+                if (aqiVal > 100 && aqiCategory)  alerts.push(aqiCategory);
+                if (tempVal < 10) alerts.push("低温");
+                if (tempVal > 34) alerts.push("高温");
+                if (alerts.length > 0) return alerts.join('/'); 
+            }
+            return "";
+        }
+
+        // =======================================================
+        // 渲染板块 1：地图
+        // =======================================================
+        function renderMap(token) {
+            if (mymap) { mymap.remove(); mymap = null; }
+            mymap = L.map('map', { zoomControl: false }).setView([28.98, 118.865], 9);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' }).addTo(mymap);
+            L.tileLayer('https://tiles.aqicn.org/tiles/usepa-aqi/{z}/{x}/{y}.png?token=' + token + '&_t=' + new Date().getTime(), { maxZoom: 18, opacity: 0.8 }).addTo(mymap);
+        }
+
+        // =======================================================
+        // 渲染板块 2：常规天气与AQI组合图表
+        // =======================================================
+        function renderComboChart(weatherData, aqiData) {
+            if (weatherData.code !== "200" || !weatherData.hourly) return;
+            
+            var labels = []; var tempData = []; var precipData = [];
+            var labelColors = []; var directAlertTexts = [];
+            var extraTooltipData = [];
+
+            var aqiTimeMap = {};
+            if(aqiData && aqiData.hours) {
+                aqiData.hours.forEach(h => {
+                    var ts = parseToTimestamp(h.forecastTime);
+                    if(h.indexes && h.indexes[0]) {
+                        aqiTimeMap[ts] = { 
+                            aqi: h.indexes[0].aqi, 
+                            category: h.indexes[0].category 
+                        };
+                    }
+                });
+            }
+            
+            weatherData.hourly.forEach(item => {
+                var formattedTime = formatWeatherTime(item.fxTime);
+                labels.push(formattedTime);
+                
+                var tVal = parseFloat(item.temp);
+                var pVal = parseFloat(item.precip);
+                var weatherTextStr = item.text; 
+                tempData.push(tVal);
+                precipData.push(pVal);
+
+                var currentTs = parseToTimestamp(item.fxTime);
+                var matchedAqi = aqiTimeMap[currentTs] ? aqiTimeMap[currentTs].aqi : "暂无";
+                var matchedAqiDesc = aqiTimeMap[currentTs] ? aqiTimeMap[currentTs].category : "未知";
+
+                var alertProjectText = checkAlertTriggerProject(formattedTime, pVal, weatherTextStr, parseInt(matchedAqi), matchedAqiDesc, tVal);
+                directAlertTexts.push(alertProjectText);
+
+                if (alertProjectText !== "") {
+                    labelColors.push('#0000FF');
+                } else {
+                    labelColors.push('#64748b');
+                }
+                
+                extraTooltipData.push({
+                    text: weatherTextStr, windDir: item.windDir, temp: item.temp, precip: pVal,
+                    aqi: matchedAqi, aqiDesc: matchedAqiDesc
+                });
+            });
+            
+            if (myChart) { myChart.destroy(); }
+            
+            var ctx = document.getElementById('weatherChart').getContext('2d');
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            type: 'line', data: tempData, borderColor: '#f59e0b', borderWidth: 2, tension: 0.25,
+                            pointBackgroundColor: '#f59e0b', pointBorderColor: '#f59e0b', pointRadius: 3.5,
+                            yAxisID: 'y-temp',
+                            datalabels: { display: false }
+                        },
+                        {
+                            type: 'bar', data: precipData, backgroundColor: 'rgba(59, 130, 246, 0.4)',
+                            yAxisID: 'y-precip',
+                            datalabels: {
+                                display: true,
+                                align: 'top',
+                                anchor: 'end',
+                                color: '#0000FF', 
+                                font: { weight: 'bold', size: 12 },
+                                formatter: function(value, context) {
+                                    return directAlertTexts[context.dataIndex] || '';
+                                }
+                            }
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { 
+                            grid: { display: false },
+                            ticks: {
+                                color: function(context) { return labelColors[context.index] || '#64748b'; },
+                                font: function(context) {
+                                    var isBold = labelColors[context.index] === '#0000FF';
+                                    return { size: isBold ? 12 : 11, weight: isBold ? 'bold' : 'normal', family: 'sans-serif' };
+                                }
+                            }
+                        },
+                        'y-temp': { type: 'linear', position: 'left', grid: { color: '#f1f5f9' } },
+                        'y-precip': { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, min: 0, max: Math.max(...precipData, 2) }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.96)', padding: 12, cornerRadius: 8, displayColors: false,
+                            callbacks: {
+                                title: function(tooltipItems) { return tooltipItems[0].label; },
+                                label: function() { return null; },
+                                footer: function(tooltipItems) {
+                                    var index = tooltipItems[0].dataIndex;
+                                    var ext = extraTooltipData[index];
+                                    return [
+                                        `${ext.temp}°C，${ext.text}，${ext.windDir}`,
+                                        `降水量：${ext.precip}mm`,
+                                        `AQI指数：${ext.aqi} (${ext.aqiDesc})`
+                                    ].join('\n');
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // =======================================================
+        // 渲染板块 3：分钟级降水图表
+        // =======================================================
+        function renderMinutely(data) {
+            if (data.code !== "200" || !data.minutely) return;
+            
+            var minutelyLabels = []; var minutelyPrecip = [];
+            
+            data.minutely.forEach((item, idx) => {
+                var timeStr = formatMinutelyTime(item.fxTime);
+                minutelyLabels.push(idx % 4 === 0 ? timeStr : '');
+                minutelyPrecip.push(parseFloat(item.precip || 0));
+            });
+            
+            if (minutelyChart) { minutelyChart.destroy(); }
+            
+            var ctx = document.getElementById('minutelyChart').getContext('2d');
+            minutelyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: minutelyLabels,
+                    datasets: [{
+                        data: minutelyPrecip,
+                        backgroundColor: 'rgba(14, 165, 233, 0.55)',
+                        borderColor: '#0284c7',
+                        borderWidth: 1,
+                        barPercentage: 0.4,
+                        categoryPercentage: 0.8,
+                        datalabels: { display: false }
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } },
+                        y: { type: 'linear', position: 'left', min: 0, max: Math.max(...minutelyPrecip, 0.5), ticks: { font: { size: 10 } }, grid: { color: '#f1f5f9' } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.96)', padding: 8, cornerRadius: 6, displayColors: false,
+                            callbacks: {
+                                title: function(items) { return formatMinutelyTime(data.minutely[items[0].dataIndex].fxTime); },
+                                label: function(item) {
+                                    var typeStr = data.minutely[item.dataIndex].type === 'rain' ? '雨' : '雪';
+                                    return `预计降${typeStr}量: ${item.raw} mm`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // =======================================================
+        // 渲染板块 4：极端天气预警看板
+        // =======================================================
+        function renderAlert(data) {
+            var container = document.getElementById("alert-board-content");
+            if(data.zeroResult === true || !data.alerts || data.alerts.length === 0) {
+                container.innerHTML = '<div style="color: #64748b; text-align:center; padding-top:40px;">当前区域无活动气象预警</div>';
+                return;
+            }
+            var htmlBuffer = "";
+            data.alerts.forEach(item => {
+                var displayTime = formatWeatherTime(item.issuedTime);
+                htmlBuffer += `
+                    <div class="alert-item">
+                        <div class="alert-time">📅 发布时间: ${displayTime}</div>
+                        <div class="alert-headline">
+                            ⚠️ ${item.headline}
+                            <div class="tooltip-box">${item.description}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = htmlBuffer;
+        }
+
+        // =======================================================
+        // 核心集成逻辑：从本地集成的 data.json 读取打包好的静态数据
+        // =======================================================
+        function loadStaticData() {
+            // 加载带有随机时间戳的本地静态数据，防止浏览器剧烈缓存
+            fetch('./data.json?_t=' + new Date().getTime())
+                .then(res => res.json())
+                .then(bigData => {
+                    // 1. 分发渲染
+                    renderMap(bigData.aqicnToken);
+                    renderComboChart(bigData.weather24h, bigData.aqiHourly);
+                    renderMinutely(bigData.minutely);
+                    renderAlert(bigData.alert);
+                    
+                    // 2. 状态标签解析说明
+                    var displayTime = bigData.lastUpdated ? bigData.lastUpdated.substring(11, 16) : "未知";
+                    
+                    document.getElementById("time-map").innerText = `同步于: ${displayTime}`;
+                    document.getElementById("time-chart").innerText = `同步于: ${displayTime} (时控)`;
+                    document.getElementById("time-minutely").innerText = `同步于: ${displayTime} (15m控)`;
+                    document.getElementById("time-alert").innerText = `同步于: ${displayTime}`;
+                })
+                .catch(err => {
+                    console.error("加载编译后的静态天气缓存失败:", err);
+                    document.getElementById("alert-board-content").innerText = "暂无本地打包数据，请等待 GitHub Actions 首次编译运行。";
+                });
+        }
+
+        // 页面打开时立即加载
+        window.onload = loadStaticData;
+    </script>
+</body>
+</html>
