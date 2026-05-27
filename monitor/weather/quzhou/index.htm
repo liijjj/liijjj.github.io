@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>综合数据监控面板 (Data Dash)</title>
+    <title>综合数据监控面板 (Data Dash) - 静态安全版</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -115,7 +115,7 @@
 
     <header>
         <h1>数据看板中心</h1>
-        <div style="font-size: 12px; color: #64748b; font-weight: bold; background: #e2e8f0; padding: 4px 8px; border-radius: 4px;">主题：天气</div>
+        <div style="font-size: 12px; color: #64748b; font-weight: bold; background: #e2e8f0; padding: 4px 8px; border-radius: 4px;">主题：天气（安全静态缓存版）</div>
     </header>
 
     <div class="dashboard-grid">
@@ -217,7 +217,6 @@
             return new Date(zuluTimeString).getTime();
         }
 
-        // 核心集成逻辑：纯蓝色标签直显，不包含硬编码的主观天气判断
         function checkAlertTriggerProject(labelStr, precipVal, weatherText, aqiVal, aqiCategory, tempVal) {
             if (!labelStr) return "";
             var isTargetTime = labelStr.includes('08:00') || labelStr.includes('12:00') || labelStr.includes('20:00') || labelStr.includes('21:00');
@@ -232,21 +231,37 @@
             return "";
         }
 
+        // 定义静态数据池路径映射（相对于 index.htm 所在的 monitor/weather/quzhou/ 目录）
+        var STATIC_PATHS = {
+            map_token: "./output/aqicn_token.txt", // 瓦片地图公开Token通过独立文件异步拉取，防止源码泄露
+            weather_24h: "./output/weather_24h.json",
+            air_hourly: "./output/air_hourly.json",
+            minutely: "./output/minutely.json",
+            alerts: "./output/alerts.json"
+        };
+
         var apiRegistry = {
             "quzhou-map": {
-                interval: 60 * 60 * 1000, intervalDesc: "1h", countdown: 0, timeDomId: "time-map",
+                interval: 60 * 60 * 1000, intervalDesc: "1h缓存", countdown: 0, timeDomId: "time-map",
                 execute: function() {
-                    if (mymap) { mymap.remove(); mymap = null; }
-                    mymap = L.map('map', { zoomControl: false }).setView([28.98, 118.865], 9);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' }).addTo(mymap);
-                    aqiLayer = L.tileLayer('https://tiles.aqicn.org/tiles/usepa-aqi/{z}/{x}/{y}.png?token=fcb33ba925bd1ca319369d0eb68a0170054b7b05&_t=' + new Date().getTime(), { maxZoom: 18, opacity: 0.8 }).addTo(mymap);
+                    // 异步读取已脱敏的公共瓦片Token文件
+                    fetch(STATIC_PATHS.map_token + "?_t=" + new Date().getTime())
+                        .then(res => res.text())
+                        .then(token => {
+                            token = token.trim();
+                            if (mymap) { mymap.remove(); mymap = null; }
+                            mymap = L.map('map', { zoomControl: false }).setView([28.98, 118.865], 9);
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' }).addTo(mymap);
+                            aqiLayer = L.tileLayer('https://tiles.aqicn.org/tiles/usepa-aqi/{z}/{x}/{y}.png?token=' + token + '&_t=' + new Date().getTime(), { maxZoom: 18, opacity: 0.8 }).addTo(mymap);
+                        }).catch(err => {
+                            console.error("无法加载地图Token静态缓存", err);
+                        });
                 }
             },
             "weather-alert": {
-                interval: 60 * 60 * 1000, intervalDesc: "1h", countdown: 0, timeDomId: "time-alert",
+                interval: 15 * 60 * 1000, intervalDesc: "15m缓存", countdown: 0, timeDomId: "time-alert",
                 execute: function() {
-                    var alertUrl = "https://jv487u72ga.re.qweatherapi.com/weatheralert/v1/current/28.98/118.865?key=4c8cf1c1bf5646829dd3e768de32ba23&_t=" + new Date().getTime();
-                    fetch(alertUrl)
+                    fetch(STATIC_PATHS.alerts + "?_t=" + new Date().getTime())
                         .then(res => res.json())
                         .then(data => {
                             var container = document.getElementById("alert-board-content");
@@ -269,19 +284,16 @@
                             });
                             container.innerHTML = htmlBuffer;
                         }).catch(e => {
-                            document.getElementById("alert-board-content").innerHTML = "预警数据异常";
+                            document.getElementById("alert-board-content").innerHTML = "无可用本地预警缓存或数据格式不正确";
                         });
                 }
             },
             "weather-combo-data": {
-                interval: 60 * 60 * 1000, intervalDesc: "1h", countdown: 0, timeDomId: "time-chart",
+                interval: 60 * 60 * 1000, intervalDesc: "1h缓存", countdown: 0, timeDomId: "time-chart",
                 execute: function() {
-                    var weatherUrl = "https://jv487u72ga.re.qweatherapi.com/v7/weather/24h?location=118.865,28.98&key=4c8cf1c1bf5646829dd3e768de32ba23&_t=" + new Date().getTime();
-                    var aqiPredictionUrl = "https://jv487u72ga.re.qweatherapi.com/airquality/v1/hourly/28.98/118.865?key=4c8cf1c1bf5646829dd3e768de32ba23&_t=" + new Date().getTime();
-                    
                     Promise.all([
-                        fetch(weatherUrl).then(r => r.json()),
-                        fetch(aqiPredictionUrl).then(r => r.json())
+                        fetch(STATIC_PATHS.weather_24h + "?_t=" + new Date().getTime()).then(r => r.json()),
+                        fetch(STATIC_PATHS.air_hourly + "?_t=" + new Date().getTime()).then(r => r.json())
                     ])
                     .then(([weatherData, aqiData]) => {
                         if (weatherData.code !== "200" || !weatherData.hourly) return;
@@ -317,7 +329,6 @@
                             var matchedAqi = aqiTimeMap[currentTs] ? aqiTimeMap[currentTs].aqi : "暂无";
                             var matchedAqiDesc = aqiTimeMap[currentTs] ? aqiTimeMap[currentTs].category : "未知";
 
-                            // 计算预警项目文字
                             var alertProjectText = checkAlertTriggerProject(formattedTime, pVal, weatherTextStr, parseInt(matchedAqi), matchedAqiDesc, tVal);
                             directAlertTexts.push(alertProjectText);
 
@@ -408,14 +419,13 @@
                                 }
                             }
                         });
-                    });
+                    }).catch(err => console.error("读取小时预报缓存失败", err));
                 }
             },
             "weather-minutely": {
-                interval: 15 * 60 * 1000, intervalDesc: "15m", countdown: 0, timeDomId: "time-minutely",
+                interval: 15 * 60 * 1000, intervalDesc: "15m缓存", countdown: 0, timeDomId: "time-minutely",
                 execute: function() {
-                    var minutelyUrl = "https://jv487u72ga.re.qweatherapi.com/v7/minutely/5m?location=118.865,28.98&key=4c8cf1c1bf5646829dd3e768de32ba23&_t=" + new Date().getTime();
-                    fetch(minutelyUrl)
+                    fetch(STATIC_PATHS.minutely + "?_t=" + new Date().getTime())
                         .then(res => res.json())
                         .then(data => {
                             if (data.code !== "200" || !data.minutely) return;
@@ -423,7 +433,6 @@
                             var minutelyLabels = [];
                             var minutelyPrecip = [];
                             
-                            // 隔位显示X轴标签，防止5分钟级别时间过密堆叠
                             data.minutely.forEach((item, idx) => {
                                 var timeStr = formatMinutelyTime(item.fxTime);
                                 minutelyLabels.push(idx % 4 === 0 ? timeStr : '');
@@ -442,8 +451,8 @@
                                         backgroundColor: 'rgba(14, 165, 233, 0.55)',
                                         borderColor: '#0284c7',
                                         borderWidth: 1,
-                                        barPercentage: 0.4,       // 使得柱形更窄更美观
-                                        categoryPercentage: 0.8,  // 调节单柱间距
+                                        barPercentage: 0.4,
+                                        categoryPercentage: 0.8,
                                         datalabels: { display: false }
                                     }]
                                 },
@@ -476,9 +485,7 @@
                                     }
                                 }
                             });
-                        }).catch(e => {
-                            console.error("分钟级降水解析异常", e);
-                        });
+                        }).catch(e => console.error("读取分钟级降水缓存失败", e));
                 }
             }
         };
@@ -491,7 +498,7 @@
                 component.countdown = component.interval;
                 var dom = document.getElementById(component.timeDomId);
                 if (dom) {
-                    dom.innerText = "下次刷新：" + getNextRefreshTimeString(component.interval) + ` (${component.intervalDesc})`;
+                    dom.innerText = "缓存预期同步周期：" + component.intervalDesc;
                 }
             } catch (e) { console.error(e); }
         }
