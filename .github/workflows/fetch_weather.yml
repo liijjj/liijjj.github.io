@@ -2,19 +2,16 @@ name: Automated Weather Data Fetcher
 
 on:
   schedule:
-    # 周期性定时器：每15分钟触发一次 (对应分钟为：0, 15, 30, 45)
-    # 此时区为 UTC，对应的北京时间同样为整点、15分、30分、45分
+    # 每15分钟触发一次
     - cron: '*/15 * * * *'
-  workflow_dispatch: # 允许你在 GitHub 页面上手动点击运行测试
+  workflow_dispatch: # 允许手动点击运行
 
 permissions:
-  contents: write # 赋予工作流向仓库提交代码和更新 JSON 的权限
+  contents: write 
 
 jobs:
   fetch-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
     - name: Checkout Repository
@@ -23,7 +20,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-node-version: '3.10'
+        python-version: '3.10' # ✅ 修正参数名
 
     - name: Install Dependencies
       run: |
@@ -32,6 +29,7 @@ jobs:
     - name: Execute Data Fetching Script
       env:
         QWEATHER_KEY: ${{ secrets.QWEATHER_KEY }}
+        QWEATHER_DOMAIN: ${{ secrets.QWEATHER_DOMAIN }} # ⚠️ 确保你的 Secret 里有配置这个
         AQICN_TOKEN: ${{ secrets.AQICN_TOKEN }}
       run: |
         python monitor/weather/quzhou/fetch_data.py
@@ -41,8 +39,9 @@ jobs:
         git config --global user.name "github-actions[bot]"
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
         
-        # 检查 output 目录内是否有文件变更
-        git add monitor/weather/quzhou/output/
+        # ✅ 强行强制把整个 monitor 目录的变更都纳入 Git 检查，防止漏掉路径
+        git add monitor/
+        
         if git diff --staged --quiet; then
           echo "数据未发生实质变化，跳过本次提交。"
         else
