@@ -241,7 +241,7 @@
                 }
             },
             "weather-alert": {
-                interval: 15 * 60 * 1000, timeDomId: "time-alert",
+                interval: 60 * 60 * 1000, timeDomId: "time-alert",
                 execute: function() {
                     fetch(STATIC_PATHS.alerts + "?_t=" + new Date().getTime())
                         .then(res => res.json())
