@@ -3,7 +3,7 @@ import time
 import requests
 #GitHub Actions 将运行fetch_data.py来定时更新数据。
 
-# 创建缓存输出/缓存目录
+# 创建缓存输出/缓存目录。
 output_dir = "monitor/weather/quzhou/output"
 os.makedirs(output_dir, exist_ok=True)
 
