@@ -1,62 +1,49 @@
-name: 自动更新天气静态缓存 (15m/1h 混合周期)
+name: Automated Weather Data Fetcher
 
 on:
   schedule:
-    # 每 15 分钟运行一次（GitHub Actions 可能会有几分钟延迟，属正常现象）
+    # 周期性定时器：每15分钟触发一次 (对应分钟为：0, 15, 30, 45)
+    # 此时区为 UTC，对应的北京时间同样为整点、15分、30分、45分
     - cron: '*/15 * * * *'
-  workflow_dispatch: # 允许在 GitHub 页面上手动点击 "Run workflow" 触发
+  workflow_dispatch: # 允许你在 GitHub 页面上手动点击运行测试
 
 permissions:
-  contents: write # 赋予 Actions 机器人向仓库提交和推送代码的权限
+  contents: write # 赋予工作流向仓库提交代码和更新 JSON 的权限
 
 jobs:
-  update-weather-data:
+  fetch-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. 检出仓库代码
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    # 2. 设置 Python 环境
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
-        cache: 'pip' # 自动缓存依赖，加速后续运行
+        python-node-version: '3.10'
 
-    # 3. 安装依赖
     - name: Install Dependencies
       run: |
-        python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; else pip install requests; fi
+        pip install requests
 
-    # 4. 运行天气与空气质量抓取脚本
-    - name: Run Weather Fetch Script
+    - name: Execute Data Fetching Script
       env:
-        AQICN_TOKEN: ${{ secrets.AQICN_TOKEN }}
-        QWEATHER_DOMAIN: ${{ secrets.QWEATHER_DOMAIN }}
         QWEATHER_KEY: ${{ secrets.QWEATHER_KEY }}
+        AQICN_TOKEN: ${{ secrets.AQICN_TOKEN }}
       run: |
-        # 创建输出目录（防止脚本因找不到目录报错）
-        mkdir -p monitor/weather/quzhou/output/
-        
-        # 运行 Python 脚本
-        python fetch.py
+        python monitor/weather/quzhou/fetch_data.py
 
-    # 5. 自动将最新的数据提交并推送到 GitHub 仓库
-    - name: Commit and Push Changes
+    - name: Commit and Push Updates
       run: |
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
         
-        # 仅暂存该衢州天气输出目录下的 JSON 变更，避免误触其他文件
-        git add monitor/weather/quzhou/output/*.json
-        
-        # 检查是否有文件更新，防止没有数据变化时 commit 报错
+        # 检查 output 目录内是否有文件变更
+        git add monitor/weather/quzhou/output/
         if git diff --staged --quiet; then
-          echo "数据未发生变化，跳过本次提交。"
+          echo "数据未发生实质变化，跳过本次提交。"
         else
-          git commit -m "🤖 自动更新天气静态缓存 [Skip CI]"
+          git commit -m "🤖 自动跑批：同步最新气象及空气质量数据 [$(date -d '8 hours' +'%Y-%m-%d %H:%M:%S') CST]"
           git push origin main
         fi
