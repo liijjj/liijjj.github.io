@@ -118,7 +118,7 @@
         <div class="api-card">
             <div class="card-header">
                 <span class="card-title">衢州aqicn瓦片地图</span>
-                <div class="card-meta"><span id="time-map">正在载入静态数据...</span></div>
+                <div class="card-meta"><span id="time-map">计算中...</span></div>
             </div>
             <div class="card-body" style="padding: 10px;"><div id="map"></div></div>
         </div>
@@ -126,7 +126,7 @@
         <div class="api-card wide-card">
             <div class="card-header">
                 <span class="card-title">和风逐小时天气预报</span>
-                <div class="card-meta"><span id="time-chart">正在载入静态数据...</span></div>
+                <div class="card-meta"><span id="time-chart">计算中...</span></div>
             </div>
             <div class="card-body">
                 <div class="chart-container"><canvas id="weatherChart"></canvas></div>
@@ -136,7 +136,7 @@
         <div class="api-card">
             <div class="card-header">
                 <span class="card-title">和风分钟级降水</span>
-                <div class="card-meta"><span id="time-minutely">正在载入静态数据...</span></div>
+                <div class="card-meta"><span id="time-minutely">计算中...</span></div>
             </div>
             <div class="card-body" style="padding: 16px;">
                 <div class="chart-container" style="height: 240px;"><canvas id="minutelyChart"></canvas></div>
@@ -146,7 +146,7 @@
         <div class="api-card">
             <div class="card-header">
                 <span class="card-title">和风极端天气预警</span>
-                <div class="card-meta"><span id="time-alert">正在载入静态数据...</span></div>
+                <div class="card-meta"><span id="time-alert">计算中...</span></div>
             </div>
             <div class="card-body" style="padding: 10px;">
                 <div class="alert-board" id="alert-board-content">正在载入预警数据...</div>
@@ -163,7 +163,6 @@
         var myChart = null; 
         var minutelyChart = null;
         
-        // 公开可用的 AQICN Token 变量（隐藏敏感 Token，若有需要可在此更换）
         var AQICN_PUBLIC_TOKEN = "fcb33ba925bd1ca319369d0eb68a0170054b7b05";
 
         function formatWeatherTime(rawTime) {
@@ -181,21 +180,47 @@
             return new Date(zuluTimeString).getTime();
         }
 
+        // --- 优化1：动态计算精确的“下次更新时间”提示文本 ---
+        function getNextUpdateTimeString(intervalMinutes) {
+            var now = new Date();
+            var totalMinutes = now.getHours() * 60 + now.getMinutes();
+            // 计算距离下一个整周期还需要多少分钟
+            var passedInPeriod = totalMinutes % intervalMinutes;
+            var minutesToWait = intervalMinutes - passedInPeriod;
+            
+            var nextTargetDate = new Date(now.getTime() + minutesToWait * 60000);
+            var nextHours = String(nextTargetDate.getHours()).padStart(2, '0');
+            var nextMinutes = String(nextTargetDate.getMinutes()).padStart(2, '0');
+            
+            return `下次更新时间：${nextHours}:${nextMinutes}`;
+        }
+
+        // --- 优化3：严格遵循优先级，最多输出一个核心标签 (降雨 > 低温 > 高温 > 污染) ---
         function checkAlertTriggerProject(labelStr, precipVal, weatherText, aqiVal, aqiCategory, tempVal) {
             if (!labelStr) return "";
             var isTargetTime = labelStr.includes('08:00') || labelStr.includes('12:00') || labelStr.includes('20:00') || labelStr.includes('21:00');
             if (isTargetTime) {
-                var alerts = [];
-                if (precipVal > 0 && weatherText) alerts.push(weatherText);
-                if (aqiVal > 100 && aqiCategory)  alerts.push(aqiCategory);
-                if (tempVal < 10) alerts.push("低温");
-                if (tempVal > 34) alerts.push("高温");
-                if (alerts.length > 0) return alerts.join('/'); 
+                // 1. 优先级最高：降雨
+                if (precipVal > 0 && weatherText) {
+                    return weatherText;
+                }
+                // 2. 优先级第二：低温
+                if (tempVal < 10) {
+                    return "低温";
+                }
+                // 3. 优先级第三：高温
+                if (tempVal > 34) {
+                    return "高温";
+                }
+                // 4. 优先级第四：空气污染
+                if (aqiVal > 100 && aqiCategory) {
+                    return aqiCategory;
+                }
             }
             return "";
         }
 
-        // --- 局部刷新逻辑：改由读取本地 Actions 定时生成的 output 静态文件 ---
+        // --- 局部数据载入函数 ---
 
         function updateMapComponent() {
             if (!mymap) {
@@ -203,15 +228,17 @@
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' }).addTo(mymap);
                 aqiLayer = L.tileLayer('https://tiles.aqicn.org/tiles/usepa-aqi/{z}/{x}/{y}.png?token=' + AQICN_PUBLIC_TOKEN + '&_t=' + new Date().getTime(), { maxZoom: 18, opacity: 0.8 }).addTo(mymap);
             } else {
-                // 如果地图已经存在，停留时仅局部刷新 AQI 图层
                 mymap.removeLayer(aqiLayer);
                 aqiLayer = L.tileLayer('https://tiles.aqicn.org/tiles/usepa-aqi/{z}/{x}/{y}.png?token=' + AQICN_PUBLIC_TOKEN + '&_t=' + new Date().getTime(), { maxZoom: 18, opacity: 0.8 }).addTo(mymap);
             }
-            document.getElementById("time-map").innerText = "数据同步：每小时整点自动跑批";
+            // 瓦片图层随小时整点跑批同步
+            document.getElementById("time-map").innerText = getNextUpdateTimeString(60);
         }
 
         function updateWeatherComboComponent() {
             var cacheBuster = "?_t=" + new Date().getTime();
+            document.getElementById("time-chart").innerText = getNextUpdateTimeString(60);
+
             Promise.all([
                 fetch('./output/weather_24h.json' + cacheBuster).then(r => r.json()),
                 fetch('./output/aqi_hourly.json' + cacheBuster).then(r => r.json())
@@ -247,6 +274,7 @@
                     var matchedAqi = aqiTimeMap[currentTs] ? aqiTimeMap[currentTs].aqi : "暂无";
                     var matchedAqiDesc = aqiTimeMap[currentTs] ? aqiTimeMap[currentTs].category : "未知";
 
+                    // 核心过滤，保证只暴露一个标签
                     var alertProjectText = checkAlertTriggerProject(formattedTime, pVal, weatherTextStr, parseInt(matchedAqi), matchedAqiDesc, tVal);
                     directAlertTexts.push(alertProjectText);
 
@@ -319,12 +347,13 @@
                         }
                     }
                 });
-                document.getElementById("time-chart").innerText = "数据同步：每小时整点自动跑批";
             }).catch(e => console.error("小时天气解析异常", e));
         }
 
         function updateMinutelyComponent() {
             var cacheBuster = "?_t=" + new Date().getTime();
+            document.getElementById("time-minutely").innerText = getNextUpdateTimeString(15);
+
             fetch('./output/weather_minutely.json' + cacheBuster)
                 .then(res => res.json())
                 .then(data => {
@@ -372,12 +401,13 @@
                             }
                         }
                     });
-                    document.getElementById("time-minutely").innerText = "数据同步：每15分钟自动跑批";
                 }).catch(e => console.error("分钟级降水解析异常", e));
         }
 
         function updateAlertComponent() {
             var cacheBuster = "?_t=" + new Date().getTime();
+            document.getElementById("time-alert").innerText = getNextUpdateTimeString(60);
+
             fetch('./output/weather_alert.json' + cacheBuster)
                 .then(res => res.json())
                 .then(data => {
@@ -399,13 +429,12 @@
                             </div>`;
                     });
                     container.innerHTML = htmlBuffer;
-                    document.getElementById("time-alert").innerText = "数据同步：每小时整点自动跑批";
                 }).catch(e => {
                     document.getElementById("alert-board-content").innerHTML = "暂无预警或解析异常";
                 });
         }
 
-        // 全局刷新核心：只更新局部 DOM 与 Canvas，不重载整个页面
+        // 统一控制所有组件的数据流刷新
         function refreshAllComponents() {
             updateMapComponent();
             updateWeatherComboComponent();
@@ -415,7 +444,7 @@
 
         window.onload = function() {
             refreshAllComponents();
-            // 长时间驻留网页：每 60 秒在前端触发一次静默局部刷新，获取最新由 Actions 生成的静态 JSON
+            // 保持每 60 秒局部刷新一次，即时对齐并刷新“下次更新时间”的倒计时文本
             setInterval(refreshAllComponents, 60000); 
         };
     </script>
