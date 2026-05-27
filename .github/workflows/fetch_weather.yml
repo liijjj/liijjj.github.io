@@ -1,0 +1,67 @@
+name: Fetch Weather Data Clockwork
+
+on:
+  schedule:
+    - cron: '*/15 * * * *' # 每隔 15 分钟自动执行一次 (如 0分, 15分, 30分, 45分)
+  workflow_dispatch: # 允许手动触发测试
+
+permissions:
+  contents: write
+
+jobs:
+  update-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch and Merge Climate Data
+        run: |
+          echo "开始执行15分钟定时任务..."
+          
+          # 获取当前时间（当前执行时的分钟数，如 00, 15, 30, 45）
+          CURRENT_MIN=$(date +%M)
+          echo "当前执行时间（分钟）：$CURRENT_MIN"
+
+          # =======================================================
+          # 1. 【高频区】每15分钟必抓的数据：分钟级降水
+          # =======================================================
+          curl -s "https://${{ secrets.QWEATHER_DOMAIN }}/v7/minutely/5m?location=118.865,28.98&key=${{ secrets.QWEATHER_KEY }}" > minutely.json
+
+          # =======================================================
+          # 2. 【低频区】只有在整点（00分）或者本地缺失缓存时，才抓取长周期数据
+          # =======================================================
+          if [ "$CURRENT_MIN" = "00" ] || [ ! -f "weather_24h.json" ] || [ ! -f "aqi_hourly.json" ] || [ ! -f "alert.json" ]; then
+              echo "⏰ 触发整点/初始化抓取：更新长周期天气数据..."
+              curl -s "https://${{ secrets.QWEATHER_DOMAIN }}/v7/weather/24h?location=118.865,28.98&key=${{ secrets.QWEATHER_KEY }}" > weather_24h.json
+              curl -s "https://${{ secrets.QWEATHER_DOMAIN }}/airquality/v1/hourly/28.98/118.865?key=${{ secrets.QWEATHER_KEY }}" > aqi_hourly.json
+              curl -s "https://${{ secrets.QWEATHER_DOMAIN }}/weatheralert/v1/current/28.98/118.865?key=${{ secrets.QWEATHER_KEY }}" > alert.json
+          else
+              echo "☕ 未到整点，重用上一次生成的常规天气缓存文件。"
+          fi
+
+          # =======================================================
+          # 3. 动态组装最新的 data.json，并打上当前更新的时间戳
+          # =======================================================
+          UPDATE_TIME=$(date +"%Y-%m-%d %H:%M:%S")
+          
+          echo "{" > data.json
+          echo "\"lastUpdated\": \"${UPDATE_TIME}\"," >> data.json
+          echo "\"aqicnToken\": \"${{ secrets.AQICN_TOKEN }}\"," >> data.json
+          echo "\"weather24h\": $(cat weather_24h.json)," >> data.json
+          echo "\"aqiHourly\": $(cat aqi_hourly.json)," >> data.json
+          echo "\"minutely\": $(cat minutely.json)," >> data.json
+          echo "\"alert\": $(cat alert.json)" >> data.json
+          echo "}" >> data.json
+          
+          # 只删除高频生成的临时文件，长周期文件的 json 留着下个 15 分钟复用
+          rm minutely.json
+          echo "数据合并完成！最新更新时间：$UPDATE_TIME"
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json weather_24h.json aqi_hourly.json alert.json
+          git diff-index --quiet HEAD || git commit -m "🤖 自动更新天气静态缓存 (15m/1h 混合周期)"
+          git push
