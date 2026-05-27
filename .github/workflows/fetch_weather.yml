@@ -2,16 +2,13 @@ name: 自动更新天气静态缓存 (15m/1h 混合周期)
 
 on:
   schedule:
-    # 你的定时任务配置（保持原样即可，例如每15分钟触发一次）
-    - cron: '*/15 * * * *' 
-  workflow_dispatch: # 允许你在 GitHub 页面上手动点击运行
+    - cron: '*/15 * * * *' # 每 15 分钟自动运行一次
+  workflow_dispatch: # 允许在 GitHub 页面上手动点击运行
   push:
     branches:
       - main
     paths-ignore:
-      # 【核心改动】防死循环：忽略当前以及未来所有监控子目录下的 output 变动
-      # 这样机器人提交数据时，就不会再次触发工作流导致死循环
-      - 'monitor/**/output/**'
+      - 'monitor/**/output/**' # 防死循环
 
 jobs:
   deploy-weather:
@@ -21,43 +18,28 @@ jobs:
     - name: 检出代码
       uses: actions/checkout@v4
 
-    - name: 设置 Python 环境
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.x'
-        # 如果需要缓存依赖，可以开启：
-        # cache: 'pip'
-
-    - name: 安装 Python 依赖
+    - name: 创建输出多级目录
       run: |
-        if [ -f requirements.txt ]; then
-          pip install -r requirements.txt
-        else
-          # 如果你直接在脚本里引入了 requests 或其它第三方库，请在此处补充安装
-          # 比如：pip install requests hmac hashlib
-          echo "未检测到 requirements.txt，跳过安装或按需在此处补充 pip install"
-        fi
+        # 创建专属的隔离输出文件夹，确保 curl 写入时路径存在
+        mkdir -p monitor/weather/output
 
-    - name: 运行天气采集脚本
-      env:
-        # 如果你的和风天气 KEY 或其它 Token 放在了 GitHub Secrets 里，在这里传递给环境变量
-        # QWEATHER_KEY: ${{ secrets.QWEATHER_KEY }}
-        pass
+    - name: 运行天气采集并生成 data.json
       run: |
-        # 【核心改动】请将 your_script_name.py 替换为你真实的 Python 脚本文件名
-        # 如果你的 Python 脚本也移到了 monitor/weather/ 目录下，路径请改为 python monitor/weather/your_script_name.py
-        python your_script_name.py
+        # =========================================================================
+        # 【极其重要】请把下方最后的 URL 替换为你真实的 API 请求地址（包含你的 Token/Key）
+        # 现在的接口会将获取到的庞大静态数据，精准打包并直接写入我们规划好的新路径下。
+        # =========================================================================
+        curl -s "https://hftianqi.com/api/your_real_weather_url_here" -o monitor/weather/output/data.json
 
     - name: 提交并推送数据到 GitHub Pages
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "github-actions[bot]"
         
-        # 【核心改动】极其关键：只暂存 monitor 目录。
-        # 即使未来引入 server 监控等，只要数据落在 monitor 内部，都会在这里被一并安全捕获
+        # 只把 monitor 目录下的数据变化加进暂存区
         git add monitor/
         
-        # 检查暂存区是否有文件产生真正的变化，避免空提交引发 GitHub 报错
+        # 检查是否有新数据，有就提交，没有就跳过
         if git diff --cached --quiet; then
           echo "天气数据未发生改变，跳过本次 Commit 提交。"
         else
