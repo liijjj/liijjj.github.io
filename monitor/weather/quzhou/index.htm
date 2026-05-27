@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>综合数据监控面板 (Data Dash) - 静态安全版</title>
+    <title>综合数据监控面板 (Data Dash)</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -62,11 +62,6 @@
         .card-title { font-size: 15px; font-weight: 600; color: #475569; }
         .card-meta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #64748b; font-weight: 500; }
         
-        .btn-refresh {
-            background: none; border: none; cursor: pointer; padding: 4px;
-            color: #94a3b8; display: flex; align-items: center; justify-content: center;
-        }
-        .btn-refresh:hover { color: #0f172a; }
         .card-body { padding: 16px; flex-grow: 1; background: #fff; min-height: 240px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;}
 
         #map { width: 100%; height: 240px; border-radius: 6px; z-index: 1; }
@@ -115,7 +110,7 @@
 
     <header>
         <h1>数据看板中心</h1>
-        <div style="font-size: 12px; color: #64748b; font-weight: bold; background: #e2e8f0; padding: 4px 8px; border-radius: 4px;">主题：天气（安全静态缓存版）</div>
+        <div style="font-size: 12px; color: #64748b; font-weight: bold; background: #e2e8f0; padding: 4px 8px; border-radius: 4px;">主题：天气</div>
     </header>
 
     <div class="dashboard-grid">
@@ -125,9 +120,6 @@
                 <span class="card-title">衢州aqicn瓦片地图</span>
                 <div class="card-meta">
                     <span id="time-map">等待计算...</span>
-                    <button class="btn-refresh" onclick="manualRefresh('quzhou-map')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                    </button>
                 </div>
             </div>
             <div class="card-body" style="padding: 10px;"><div id="map"></div></div>
@@ -138,9 +130,6 @@
                 <span class="card-title">和风逐小时天气预报</span>
                 <div class="card-meta">
                     <span id="time-chart">等待计算...</span>
-                    <button class="btn-refresh" onclick="manualRefresh('weather-combo-data')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                    </button>
                 </div>
             </div>
             <div class="card-body">
@@ -155,9 +144,6 @@
                 <span class="card-title">和风分钟级降水</span>
                 <div class="card-meta">
                     <span id="time-minutely">等待计算...</span>
-                    <button class="btn-refresh" onclick="manualRefresh('weather-minutely')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                    </button>
                 </div>
             </div>
             <div class="card-body" style="padding: 16px;">
@@ -172,9 +158,6 @@
                 <span class="card-title">和风极端天气预警</span>
                 <div class="card-meta">
                     <span id="time-alert">等待计算...</span>
-                    <button class="btn-refresh" onclick="manualRefresh('weather-alert')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                    </button>
                 </div>
             </div>
             <div class="card-body" style="padding: 10px;">
@@ -210,7 +193,7 @@
             var day = nextTime.getDate().toString().padStart(2, '0');
             var hours = nextTime.getHours().toString().padStart(2, '0');
             var minutes = nextTime.getMinutes().toString().padStart(2, '0');
-            return `${month}月${day}日 ${hours}:${minutes}`;
+            return `下次更新时间：${month}月${day}日 ${hours}:${minutes}`;
         }
 
         function parseToTimestamp(zuluTimeString) {
@@ -231,9 +214,9 @@
             return "";
         }
 
-        // 定义静态数据池路径映射（相对于 index.htm 所在的 monitor/weather/quzhou/ 目录）
+        // 定义静态数据池路径映射
         var STATIC_PATHS = {
-            map_token: "./output/aqicn_token.txt", // 瓦片地图公开Token通过独立文件异步拉取，防止源码泄露
+            map_token: "./output/aqicn_token.txt",
             weather_24h: "./output/weather_24h.json",
             air_hourly: "./output/air_hourly.json",
             minutely: "./output/minutely.json",
@@ -242,9 +225,8 @@
 
         var apiRegistry = {
             "quzhou-map": {
-                interval: 60 * 60 * 1000, intervalDesc: "1h缓存", countdown: 0, timeDomId: "time-map",
+                interval: 60 * 60 * 1000, timeDomId: "time-map",
                 execute: function() {
-                    // 异步读取已脱敏的公共瓦片Token文件
                     fetch(STATIC_PATHS.map_token + "?_t=" + new Date().getTime())
                         .then(res => res.text())
                         .then(token => {
@@ -259,7 +241,7 @@
                 }
             },
             "weather-alert": {
-                interval: 15 * 60 * 1000, intervalDesc: "15m缓存", countdown: 0, timeDomId: "time-alert",
+                interval: 15 * 60 * 1000, timeDomId: "time-alert",
                 execute: function() {
                     fetch(STATIC_PATHS.alerts + "?_t=" + new Date().getTime())
                         .then(res => res.json())
@@ -289,7 +271,7 @@
                 }
             },
             "weather-combo-data": {
-                interval: 60 * 60 * 1000, intervalDesc: "1h缓存", countdown: 0, timeDomId: "time-chart",
+                interval: 60 * 60 * 1000, timeDomId: "time-chart",
                 execute: function() {
                     Promise.all([
                         fetch(STATIC_PATHS.weather_24h + "?_t=" + new Date().getTime()).then(r => r.json()),
@@ -423,7 +405,7 @@
                 }
             },
             "weather-minutely": {
-                interval: 15 * 60 * 1000, intervalDesc: "15m缓存", countdown: 0, timeDomId: "time-minutely",
+                interval: 15 * 60 * 1000, timeDomId: "time-minutely",
                 execute: function() {
                     fetch(STATIC_PATHS.minutely + "?_t=" + new Date().getTime())
                         .then(res => res.json())
@@ -495,25 +477,17 @@
             if (!component) return;
             try {
                 component.execute();
-                component.countdown = component.interval;
                 var dom = document.getElementById(component.timeDomId);
                 if (dom) {
-                    dom.innerText = "缓存预期同步周期：" + component.intervalDesc;
+                    // 直接渲染为下次更新时间字符串
+                    dom.innerText = getNextRefreshTimeString(component.interval);
                 }
             } catch (e) { console.error(e); }
         }
 
-        function manualRefresh(key) { triggerRefresh(key); }
-
         window.onload = function() {
+            // 初始化执行并渲染各模块下次更新时间
             Object.keys(apiRegistry).forEach(function(key) { triggerRefresh(key); });
-            setInterval(function() {
-                Object.keys(apiRegistry).forEach(function(key) {
-                    var component = apiRegistry[key];
-                    component.countdown -= 1000;
-                    if (component.countdown <= 0) { triggerRefresh(key); }
-                });
-            }, 1000);
         };
     </script>
 </body>
