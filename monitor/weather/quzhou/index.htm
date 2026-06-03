@@ -269,16 +269,33 @@
             // 瓦片图层随小时整点跑批同步
             document.getElementById("time-map").innerText = getNextUpdateTimeString(60);
         }
+// 定义一个全局变量，用来缓存上一次请求成功的数据字符串，用于防刷对比
+        var lastWeatherRawString = "";
 
         function updateWeatherComboComponent() {
             var cacheBuster = "?_t=" + new Date().getTime();
+            // 文本必须每次都刷
             document.getElementById("time-chart").innerText = getNextUpdateTimeString(60);
 
             Promise.all([
-                fetch('./output/weather_24h.json' + cacheBuster).then(r => r.json()),
-                fetch('./output/aqi_hourly.json' + cacheBuster).then(r => r.json())
+                fetch('./output/weather_24h.json' + cacheBuster).then(r => r.text()), // 先拿纯文本对比
+                fetch('./output/aqi_hourly.json' + cacheBuster).then(r => r.text())
             ])
-            .then(([weatherData, aqiData]) => {
+            .then(([weatherRaw, aqiRaw]) => {
+                // 将两个数据串联起来作为特征码
+                var currentRawString = weatherRaw + aqiRaw;
+                
+                // 【核心优化】如果数据跟上一次完全一样，且图表已经存在，直接返回，不做任何图表操作！
+                if (currentRawString === lastWeatherRawString && myChart) {
+                    return; 
+                }
+                // 缓存当前最新的数据特征
+                lastWeatherRawString = currentRawString;
+
+                // 只有数据变了，才解析成 JSON 并渲染
+                var weatherData = JSON.parse(weatherRaw);
+                var aqiData = JSON.parse(aqiRaw);
+
                 if (weatherData.code !== "200" || !weatherData.hourly) return;
                 
                 var labels = []; var tempData = []; var precipData = [];
@@ -309,7 +326,6 @@
                     var matchedAqi = aqiTimeMap[currentTs] ? aqiTimeMap[currentTs].aqi : "暂无";
                     var matchedAqiDesc = aqiTimeMap[currentTs] ? aqiTimeMap[currentTs].category : "未知";
 
-                    // 核心过滤，保证只暴露一个标签
                     var alertProjectText = checkAlertTriggerProject(formattedTime, pVal, weatherTextStr, parseInt(matchedAqi), matchedAqiDesc, tVal);
                     directAlertTexts.push(alertProjectText);
 
@@ -325,73 +341,93 @@
                     });
                 });
                 
-                if (myChart) { myChart.destroy(); }
-                
-                var ctx = document.getElementById('weatherChart').getContext('2d');
-                myChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            {
-                                type: 'line', data: tempData, borderColor: '#f59e0b', borderWidth: 2, tension: 0.25,
-                                pointBackgroundColor: '#f59e0b', pointBorderColor: '#f59e0b', pointRadius: 3.5,
-                                yAxisID: 'y-temp', datalabels: { display: false }
-                            },
-                            {
-                                type: 'bar', data: precipData, backgroundColor: 'rgba(59, 130, 246, 0.4)',
-                                yAxisID: 'y-precip',
-                                datalabels: {
-                                    display: true, align: 'top', anchor: 'end', color: '#0000FF', 
-                                    font: { weight: 'bold', size: 12 },
-                                    formatter: function(value, context) { return directAlertTexts[context.dataIndex] || ''; }
-                                }
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        scales: {
-                            x: { 
-                                grid: { display: false },
-                                ticks: {
-                                    color: function(context) { return labelColors[context.index] || '#64748b'; },
-                                    font: function(context) {
-                                        var isBold = labelColors[context.index] === '#0000FF';
-                                        return { size: isBold ? 12 : 11, weight: isBold ? 'bold' : 'normal', family: 'sans-serif' };
+                // 【平滑更新优化】如果图表已存在，直接改数据并 update，拒绝 destroy 带来的闪烁
+                if (myChart) {
+                    myChart.data.labels = labels;
+                    myChart.data.datasets[0].data = tempData;
+                    myChart.data.datasets[1].data = precipData;
+                    // 更新配置里的 datalabels 格式化器
+                    myChart.data.datasets[1].datalabels.formatter = function(value, context) { return directAlertTexts[context.dataIndex] || ''; };
+                    myChart.options.scales.x.ticks.color = function(context) { return labelColors[context.index] || '#64748b'; };
+                    myChart.options.scales['y-precip'].max = Math.max(...precipData, 2);
+                    
+                    myChart.update('none'); // 'none' 表示静默更新，没有任何突兀的动画
+                } else {
+                    // 第一次初始化图表
+                    var ctx = document.getElementById('weatherChart').getContext('2d');
+                    myChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    type: 'line', data: tempData, borderColor: '#f59e0b', borderWidth: 2, tension: 0.25,
+                                    pointBackgroundColor: '#f59e0b', pointBorderColor: '#f59e0b', pointRadius: 3.5,
+                                    yAxisID: 'y-temp', datalabels: { display: false }
+                                },
+                                {
+                                    type: 'bar', data: precipData, backgroundColor: 'rgba(59, 130, 246, 0.4)',
+                                    yAxisID: 'y-precip',
+                                    datalabels: {
+                                        display: true, align: 'top', anchor: 'end', color: '#0000FF', 
+                                        font: { weight: 'bold', size: 12 },
+                                        formatter: function(value, context) { return directAlertTexts[context.dataIndex] || ''; }
                                     }
                                 }
-                            },
-                            'y-temp': { type: 'linear', position: 'left', grid: { color: '#f1f5f9' } },
-                            'y-precip': { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, min: 0, max: Math.max(...precipData, 2) }
+                            ]
                         },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                backgroundColor: 'rgba(15, 23, 42, 0.96)', padding: 12, cornerRadius: 8, displayColors: false,
-                                callbacks: {
-                                    title: function(tooltipItems) { return tooltipItems[0].label; },
-                                    label: function() { return null; },
-                                    footer: function(tooltipItems) {
-                                        var index = tooltipItems[0].dataIndex;
-                                        var ext = extraTooltipData[index];
-                                        return [`${ext.temp}°C，${ext.text}，${ext.windDir}`, `降水量：${ext.precip}mm`, `AQI指数：${ext.aqi} (${ext.aqiDesc})`].join('\n');
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            scales: {
+                                x: { 
+                                    grid: { display: false },
+                                    ticks: {
+                                        color: function(context) { return labelColors[context.index] || '#64748b'; },
+                                        font: function(context) {
+                                            var isBold = labelColors[context.index] === '#0000FF';
+                                            return { size: isBold ? 12 : 11, weight: isBold ? 'bold' : 'normal', family: 'sans-serif' };
+                                        }
+                                    }
+                                },
+                                'y-temp': { type: 'linear', position: 'left', grid: { color: '#f1f5f9' } },
+                                'y-precip': { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, min: 0, max: Math.max(...precipData, 2) }
+                            },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: 'rgba(15, 23, 42, 0.96)', padding: 12, cornerRadius: 8, displayColors: false,
+                                    callbacks: {
+                                        title: function(tooltipItems) { return tooltipItems[0].label; },
+                                        label: function() { return null; },
+                                        footer: function(tooltipItems) {
+                                            var index = tooltipItems[0].dataIndex;
+                                            var ext = extraTooltipData[index];
+                                            return [`${ext.temp}°C，${ext.text}，${ext.windDir}`, `降水量：${ext.precip}mm`, `AQI指数：${ext.aqi} (${ext.aqiDesc})`].join('\n');
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                });
+                    });
+                }
             }).catch(e => console.error("小时天气解析异常", e));
         }
+
+var lastMinutelyRawString = "";
 
         function updateMinutelyComponent() {
             var cacheBuster = "?_t=" + new Date().getTime();
             document.getElementById("time-minutely").innerText = getNextUpdateTimeString(15);
 
             fetch('./output/weather_minutely.json' + cacheBuster)
-                .then(res => res.json())
-                .then(data => {
+                .then(res => res.text()) // 同样先拿纯文本进行快速比对
+                .then(rawText => {
+                    if (rawText === lastMinutelyRawString && minutelyChart) {
+                        return; // 数据未变，拒绝重绘
+                    }
+                    lastMinutelyRawString = rawText;
+
+                    var data = JSON.parse(rawText);
                     if (data.code !== "200" || !data.minutely) return;
                     
                     var minutelyLabels = []; var minutelyPrecip = [];
@@ -402,40 +438,46 @@
                         minutelyPrecip.push(parseFloat(item.precip || 0));
                     });
                     
-                    if (minutelyChart) { minutelyChart.destroy(); }
-                    
-                    var ctx = document.getElementById('minutelyChart').getContext('2d');
-                    minutelyChart = new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: minutelyLabels,
-                            datasets: [{
-                                data: minutelyPrecip,
-                                backgroundColor: 'rgba(14, 165, 233, 0.55)', borderColor: '#0284c7', borderWidth: 1,
-                                barPercentage: 0.4, categoryPercentage: 0.8, datalabels: { display: false }
-                            }]
-                        },
-                        options: {
-                            responsive: true, maintainAspectRatio: false,
-                            scales: {
-                                x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } },
-                                y: { type: 'linear', position: 'left', min: 0, max: Math.max(...minutelyPrecip, 0.5), ticks: { font: { size: 10 } }, grid: { color: '#f1f5f9' } }
+                    // 【平滑更新优化】
+                    if (minutelyChart) {
+                        minutelyChart.data.labels = minutelyLabels;
+                        minutelyChart.data.datasets[0].data = minutelyPrecip;
+                        minutelyChart.options.scales.y.max = Math.max(...minutelyPrecip, 0.5);
+                        minutelyChart.update('none'); // 静默更新
+                    } else {
+                        var ctx = document.getElementById('minutelyChart').getContext('2d');
+                        minutelyChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: minutelyLabels,
+                                datasets: [{
+                                    data: minutelyPrecip,
+                                    backgroundColor: 'rgba(14, 165, 233, 0.55)', borderColor: '#0284c7', borderWidth: 1,
+                                    barPercentage: 0.4, categoryPercentage: 0.8, datalabels: { display: false }
+                                }]
                             },
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    backgroundColor: 'rgba(15, 23, 42, 0.96)', padding: 8, cornerRadius: 6, displayColors: false,
-                                    callbacks: {
-                                        title: function(items) { return formatMinutelyTime(data.minutely[items[0].dataIndex].fxTime); },
-                                        label: function(item) {
-                                            var typeStr = data.minutely[item.dataIndex].type === 'rain' ? '雨' : '雪';
-                                            return `预计降${typeStr}量: ${item.raw} mm`;
+                            options: {
+                                responsive: true, maintainAspectRatio: false,
+                                scales: {
+                                    x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } },
+                                    y: { type: 'linear', position: 'left', min: 0, max: Math.max(...minutelyPrecip, 0.5), ticks: { font: { size: 10 } }, grid: { color: '#f1f5f9' } }
+                                },
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: {
+                                        backgroundColor: 'rgba(15, 23, 42, 0.96)', padding: 8, cornerRadius: 6, displayColors: false,
+                                        callbacks: {
+                                            title: function(items) { return formatMinutelyTime(data.minutely[items[0].dataIndex].fxTime); },
+                                            label: function(item) {
+                                                var typeStr = data.minutely[item.dataIndex].type === 'rain' ? '雨' : '雪';
+                                                return `预计降${typeStr}量: ${item.raw} mm`;
+                                            }
                                         }
                                     }
                                 }
                             }
-                        }
-                    });
+                        });
+                    }
                 }).catch(e => console.error("分钟级降水解析异常", e));
         }
 
