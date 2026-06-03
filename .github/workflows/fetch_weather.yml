@@ -3,7 +3,8 @@ name: Automated Weather Data Fetcher
 on:
   schedule:
     # 每15分钟触发一次
-    - cron: '*/15 * * * *'
+    # - cron: '*/15 * * * *'
+    - cron: '7,22,37,52 * * * *'
   workflow_dispatch: # 允许手动点击运行
 
 permissions:
@@ -39,12 +40,15 @@ jobs:
         git config --global user.name "github-actions[bot]"
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
         
-        # ✅ 强行强制把整个 monitor 目录的变更都纳入 Git 检查，防止漏掉路径
+        # 强行生成一个心跳文件，记录每一次 Actions 真正运行的时间
+        echo "Last check: $(date -d '8 hours' +'%Y-%m-%d %H:%M:%S') CST" > monitor/weather/quzhou/output/heartbeat.log
+        
+        # 把整个 monitor 目录（包括新生成的心跳日志）纳入暂存区
         git add monitor/
         
         if git diff --staged --quiet; then
           echo "数据未发生实质变化，跳过本次提交。"
         else
-          git commit -m "🤖 自动跑批：同步最新气象及空气质量数据 [$(date -d '8 hours' +'%Y-%m-%d %H:%M:%S') CST]"
+          git commit -m "🤖 同步最新气象数据 [$(date -d '8 hours' +'%Y-%m-%d %H:%M:%S') CST]"
           git push origin main
         fi
