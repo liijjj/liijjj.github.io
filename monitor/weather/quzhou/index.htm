@@ -181,14 +181,49 @@
         }
 
         // --- 优化1：动态计算精确的“下次更新时间”提示文本 ---
+        // --- 优化1：动态计算精确的“错峰更新时间”提示文本 ---
         function getNextUpdateTimeString(intervalMinutes) {
             var now = new Date();
-            var totalMinutes = now.getHours() * 60 + now.getMinutes();
-            // 计算距离下一个整周期还需要多少分钟
-            var passedInPeriod = totalMinutes % intervalMinutes;
-            var minutesToWait = intervalMinutes - passedInPeriod;
-            
-            var nextTargetDate = new Date(now.getTime() + minutesToWait * 60000);
+            var currentHour = now.getHours();
+            var currentMinute = now.getMinutes();
+
+            // 1. 如果是 15 分钟级的错峰任务（分钟降水）：对应后端的 7, 22, 37, 52
+            if (intervalMinutes === 15) {
+                var targetMinutes = [7, 22, 37, 52];
+                var nextMin = null;
+
+                // 在当天下一个节点里找
+                for (var i = 0; i < targetMinutes.length; i++) {
+                    if (currentMinute < targetMinutes[i]) {
+                        nextMin = targetMinutes[i];
+                        break;
+                    }
+                }
+
+                var nextTargetDate = new Date(now.getTime());
+                if (nextMin !== null) {
+                    // 还在当前小时内
+                    nextTargetDate.setMinutes(nextMin);
+                } else {
+                    // 已经过了 52 分，下一个节点是下个小时的 07 分
+                    nextTargetDate.setHours(currentHour + 1);
+                    nextTargetDate.setMinutes(7);
+                }
+            } 
+            // 2. 如果是 60 分钟级的错峰任务（小时预报/预警/地图）：对应后端的每小时 07 分
+            else {
+                var nextTargetDate = new Date(now.getTime());
+                if (currentMinute < 7) {
+                    // 当前处于 00~06 分之间，下一个节点就是本小时的 07 分
+                    nextTargetDate.setMinutes(7);
+                } else {
+                    // 已经过了 07 分，下一个节点是下个小时的 07 分
+                    nextTargetDate.setHours(currentHour + 1);
+                    nextTargetDate.setMinutes(7);
+                }
+            }
+
+            // 格式化输出 HH:MM
             var nextHours = String(nextTargetDate.getHours()).padStart(2, '0');
             var nextMinutes = String(nextTargetDate.getMinutes()).padStart(2, '0');
             
