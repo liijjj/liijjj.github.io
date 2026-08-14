@@ -1,0 +1,122 @@
+name: 手动更新首页
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: 下载仓库
+        uses: actions/checkout@v4
+
+      - name: 生成首页
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from html import escape
+
+          root = Path('.')
+          files = []
+
+          # 扫描整个仓库
+          for p in root.rglob('*'):
+
+              if not p.is_file():
+                  continue
+
+              # 排除 Git 和 GitHub Actions 文件
+              if '.git' in p.parts or '.github' in p.parts:
+                  continue
+
+              # 排除根目录自己的 index.html
+              if p == root / 'index.html':
+                  continue
+
+              # 只收集 html / htm
+              if p.suffix.lower() in ('.html', '.htm'):
+                  files.append(p.as_posix())
+
+          # 按路径排序
+          files.sort()
+
+          # 生成链接
+          links = '\n'.join(
+              f'<li><a href="/{escape(x)}">/{escape(x)}</a></li>'
+              for x in files
+          )
+
+          html = f'''<!DOCTYPE html>
+          <html lang="zh-CN">
+
+          <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+
+          <title>Liijjj</title>
+
+          <style>
+          body {{
+              margin: 30px;
+              font-family: Arial, "Microsoft YaHei", sans-serif;
+          }}
+
+          h1 {{
+              margin-bottom: 20px;
+          }}
+
+          li {{
+              margin: 10px 0;
+          }}
+
+          a {{
+              text-decoration: none;
+          }}
+          </style>
+
+          </head>
+
+          <body>
+
+          <h1>我的项目</h1>
+
+          <ul>
+          {links}
+          </ul>
+
+          </body>
+
+          </html>
+          '''
+
+          # 写入根目录 index.html
+          (root / 'index.html').write_text(
+              html,
+              encoding='utf-8'
+          )
+
+          print(f'发现 {len(files)} 个网页')
+          for x in files:
+              print(x)
+
+          PY
+
+      - name: 提交首页
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add index.html
+
+          # 没有变化就不提交
+          git diff --cached --quiet || git commit -m "Update homepage"
+
+          # 防止其他 Action / 提交造成 push 冲突
+          git pull --rebase origin main
+
+          git push
