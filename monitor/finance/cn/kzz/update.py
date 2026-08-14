@@ -108,10 +108,6 @@ tr.future {{
 <body>
 <h2>{year} 年可转债</h2>
 <div class="notice">{notice}</div>
-<div class="info">
-今日：{today}
-　共 {len(df)} 条
-</div>
 <div class="table-wrap">
 <table>
 <thead>
