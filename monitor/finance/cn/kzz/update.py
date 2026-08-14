@@ -1,84 +1,71 @@
 import akshare as ak
+import pandas as pd
 from datetime import datetime, timezone, timedelta
+from html import escape
 
-# ============================================================
 # 北京时间
-# ============================================================
-
 CST = timezone(timedelta(hours=8))
 now = datetime.now(CST)
+
 today = now.strftime('%Y-%m-%d')
 year = now.year
 
-# ============================================================
-# 获取可转债数据
-# ============================================================
-
+# 获取全部可转债数据
 print('正在获取 AkShare 可转债数据...')
-
 df = ak.bond_zh_cov()
+print('原始数据：', len(df))
+print('全部字段：', list(df.columns))
 
-print(f'原始数据：{len(df)} 条')
-
-# ============================================================
-# 只保留今年的数据
-# ============================================================
-
+# 处理申购日期
 df['申购日期'] = df['申购日期'].astype(str)
-
+# 只保留今年
 df = df[
     df['申购日期'].str.startswith(str(year))
 ].copy()
-
-# ============================================================
-# 只保留需要显示的字段
-# ============================================================
-
-df = df[
-    ['债券简称', '申购日期', '申购代码']
-].copy()
-
-# ============================================================
-# 按申购日期排序
-# ============================================================
-
+# 按申购日期：未来 → 过去
 df = df.sort_values(
     '申购日期',
-    ascending=True
+    ascending=False
 )
+print(f'{year} 年数据：{len(df)} 条')
 
-print(f'{year} 年可转债：{len(df)} 条')
-
-
-# ============================================================
-# 生成 HTML
-# ============================================================
-
+# 生成表头
+headers = ''.join(
+    f'<th>{escape(str(col))}</th>'
+    for col in df.columns
+)
+# 生成表格
 rows = []
 
 for _, row in df.iterrows():
 
-    name = str(row['债券简称'])
     date = str(row['申购日期'])
-    code = str(row['申购代码'])
 
-    # --------------------------------------------------------
-    # 今日及未来 → 高亮
-    # --------------------------------------------------------
-
+    # 今日及未来
     future = date >= today
 
     cls = 'future' if future else ''
 
-    rows.append(f'''
-<tr class="{cls}">
-    <td>{name}</td>
-    <td>{date}</td>
-    <td>{code}</td>
-</tr>
-''')
+    cells = []
 
+    for value in row:
 
+        # NaN / None → 空白
+        if pd.isna(value):
+            value = ''
+        else:
+            value = str(value)
+
+        cells.append(
+            f'<td>{escape(value)}</td>'
+        )
+
+    rows.append(
+        f'<tr class="{cls}">'
+        + ''.join(cells)
+        + '</tr>'
+    )
+# 生成 HTML
 html = f'''<!DOCTYPE html>
 <html lang="zh-CN">
 
@@ -91,9 +78,13 @@ html = f'''<!DOCTYPE html>
     content="width=device-width,initial-scale=1"
 >
 
-<title>{year}年可转债申购</title>
+<title>{year}年可转债</title>
 
 <style>
+
+* {{
+    box-sizing: border-box;
+}}
 
 body {{
     margin: 20px;
@@ -106,7 +97,7 @@ body {{
 }}
 
 h2 {{
-    margin-bottom: 5px;
+    margin: 0 0 8px 0;
 }}
 
 .info {{
@@ -114,22 +105,29 @@ h2 {{
     margin-bottom: 15px;
 }}
 
+.table-wrap {{
+    width: 100%;
+    overflow-x: auto;
+    background: white;
+}}
+
 table {{
     border-collapse: collapse;
-    width: 100%;
-    max-width: 900px;
-    background: white;
+    white-space: nowrap;
+    min-width: max-content;
 }}
 
 th,
 td {{
     border: 1px solid #ddd;
-    padding: 9px 12px;
+    padding: 7px 10px;
     text-align: left;
 }}
 
 th {{
     background: #eee;
+    position: sticky;
+    top: 0;
 }}
 
 tr.future {{
@@ -147,22 +145,26 @@ tr.future td {{
 
 <body>
 
-<h2>{year} 年可转债申购</h2>
+<h2>{year} 年可转债</h2>
 
 <div class="info">
 更新时间：{now.strftime('%Y-%m-%d %H:%M:%S')}
 　
 今日：{today}
+　
+共 {len(df)} 条
 </div>
+
+<div class="table-wrap">
 
 <table>
 
 <thead>
+
 <tr>
-    <th>债券简称</th>
-    <th>申购日期</th>
-    <th>申购代码</th>
+{headers}
 </tr>
+
 </thead>
 
 <tbody>
@@ -173,24 +175,22 @@ tr.future td {{
 
 </table>
 
+</div>
+
 </body>
 
 </html>
 '''
 
-
-# ============================================================
 # 写入 index.html
-# ============================================================
+with open(
+    'index.html',
+    'w',
+    encoding='utf-8'
+) as f:
 
-with open('index.html', 'w', encoding='utf-8') as f:
     f.write(html)
 
 print('index.html 已生成')
-
-# ============================================================
-# 输出结果
-# ============================================================
-
-print()
+# 输出数据
 print(df.to_string(index=False))
