@@ -18,9 +18,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'
       - name: 安装 AkShare
-        run: pip install akshare==1.18.91
+        run: pip install akshare
       - name: 运行可转债程序
         run: |
           cd monitor/finance/cn/kzz
