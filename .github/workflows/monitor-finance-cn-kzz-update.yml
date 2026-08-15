@@ -3,7 +3,7 @@ on:
   schedule:
     # 北京时间每天 08:30
     # GitHub 使用 UTC，所以是 00:30
-    - cron: '30 0 * * *'
+    - cron: '13 0 * * *'
   # 允许手动运行
   workflow_dispatch:
 permissions:
