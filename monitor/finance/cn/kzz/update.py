@@ -31,9 +31,9 @@ for date, group in future_df.groupby('申购日期', sort=True):
     groups.append(f'<span class="date">【{date_text}】</span>的{escape(names_text)}')
 if groups:
     notice = '，'.join(groups)
-    notice = f'更新于{now.strftime("%Y-%m-%d %H:%M:%S")}，关注{notice}'
+    notice = f'更新于{now.strftime("%Y-%m-%d %H:%M:%S")}:{notice}'
 else:
-    notice = f'更新于{now.strftime("%Y-%m-%d %H:%M:%S")}，暂无今日及未来的可转债'
+    notice = f'更新于{now.strftime("%Y-%m-%d %H:%M:%S")}'#暂无今日及未来的可转债'
 headers = ''.join(f'<th>{escape(str(col))}</th>' for col in df.columns)
 rows = []
 for _, row in df.iterrows():
