@@ -45,7 +45,7 @@ for date, group in future_df.groupby('申购日期', sort=True):
     else:
         names_text = '、'.join(names[:-1]) + '和' + names[-1]
     # 注意：此处包含 class="date" 供前端选择器精准匹配
-    groups.append(f'<span class="date">{date_text}</span>的{escape(names_text)}')
+    groups.append(f'<span class="date">{date_text}的{escape(names_text)}</span>')
 
 if groups:
     notice = '，'.join(groups)
