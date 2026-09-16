@@ -28,7 +28,7 @@ for date, group in future_df.groupby('申购日期', sort=True):
         names_text = '和'.join(names)
     else:
         names_text = '、'.join(names[:-1]) + '和' + names[-1]
-    groups.append(f'<span class="date">【{date_text}】</span>的{escape(names_text)}')
+    groups.append(f'<span class="date">{date_text}</span>的{escape(names_text)}')
 if groups:
     notice = '，'.join(groups)
     notice = f'更新于{now.strftime("%Y-%m-%d %H:%M:%S")}:{notice}'
