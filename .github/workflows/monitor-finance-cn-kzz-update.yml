@@ -21,6 +21,8 @@ jobs:
       - name: 安装 AkShare
         run: pip install akshare
       - name: 运行可转债程序
+        env:
+          DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
         run: |
           cd monitor/finance/cn/kzz
           python update.py
