@@ -5,7 +5,6 @@
    - 若发现当天有新债申购：仅由本后端脚本触发钉钉机器人通知，及时提醒用户申购。
    - 若当天无新债申购：跳过钉钉推送。
 """
-
 import os
 import json
 import urllib.request
@@ -37,13 +36,7 @@ groups = []
 for date, group in future_df.groupby('申购日期', sort=True):
     dt = datetime.strptime(date, '%Y-%m-%d')
     date_text = f'{dt.month}月{dt.day}日{weekdays[dt.weekday()]}'
-    names = [str(x) for x in group['债券简称']]
-    if len(names) == 1:
-        names_text = names[0]
-    elif len(names) == 2:
-        names_text = '和'.join(names)
-    else:
-        names_text = '、'.join(names[:-1]) + '和' + names[-1]
+    names_text = '、'.join(group['债券简称'].astype(str))
     # 注意：此处包含 class="date" 供前端选择器精准匹配
     groups.append(f'<span class="date">{date_text}的{escape(names_text)}</span>')
 
@@ -59,14 +52,9 @@ else:
 today_df = df[df['申购日期'] == today].copy()
 
 if not today_df.empty:
-    today_names = [str(x) for x in today_df['债券简称']]
-    if len(today_names) == 1:
-        today_names_text = today_names[0]
-    elif len(today_names) == 2:
-        today_names_text = '和'.join(today_names)
-    else:
-        today_names_text = '、'.join(today_names[:-1]) + '和' + today_names[-1]
-    
+    today_names_text = '、'.join(today_df['债券简称'].astype(str))
+    dt = datetime.strptime(today, '%Y-%m-%d')
+    today_text = f'{dt.month}月{dt.day}日{weekdays[dt.weekday()]}的{today_names_text}'
     print(f"【后端提醒】检测到今日（{today}）有可转债申购：{today_names_text}")
     
     # 从 GitHub Secrets / 环境变量中提取 Webhook 地址
@@ -78,13 +66,9 @@ if not today_df.empty:
         msg = {
             "msgtype": "markdown",
             "markdown": {
-                "title": today_names_text,
-                "text": f"### 🔔 今日可转债申购提醒\n- **日期**: {today}\n- **申购目标**: **{today_names_text}**"
+                "title": today_text,
+                "text": today_text + "U"
             }
-            # "markdown": {
-            #     "title": "可转债申购提醒",
-            #     "text": f"### 🔔 今日可转债申购提醒\n- **日期**: {today}\n- **申购目标**: **{today_names_text}**"
-            # }
         }
         try:
             req = urllib.request.Request(
