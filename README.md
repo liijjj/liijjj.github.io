@@ -11,7 +11,7 @@
 | 页面 | 更新方式 | 数据来源 |
 | --- | --- | --- |
 | 衢州天气 | 每小时第 7 分钟 | 和风天气（实况、24 小时预报、分钟级降水、预警）+ WAQI（空气质量） |
-| 可转债 | 页面实时读取（无需构建） | 东方财富；每天 07:33 检查申购日并推送钉钉 |
+| 可转债 | 页面直接 iframe 嵌入 | 东方财富；每天 07:33 检查申购日并推送钉钉 |
 
 天气页会显示**真实的数据时间**：超过 90 分钟标黄、超过 270 分钟标红，不会假装数据是新的。
 
@@ -23,10 +23,9 @@ sites.json                  页面清单：标题、描述、分类、更新频�
 assets/
   site.css                  全站共享样式（浅色/深色）
   weather.css weather.js    天气页
-  kzz.css kzz.js            可转债页
   favicon.svg
 monitor/weather/quzhou/     天气页 + 抓取脚本 + requirements.txt
-monitor/finance/cn/kzz/     可转债页 + 钉钉提醒脚本
+monitor/finance/cn/kzz/     可转债页（iframe）+ 钉钉提醒脚本
 index.html 404.html         由 build.py 生成，不要手改
 .github/workflows/
   fetch_weather.yml         每小时抓数据 → 推送到 data 分支
@@ -54,7 +53,7 @@ weather/quzhou/meta.json          本次抓取时间、各接口成功/失败
 天气页的更新时间直接取 `weather_24h.json` 里的 `updateTime`，也就是数据本身的时间，
 抓取失败时不会假装更新过。`meta.json` 只用来排错。
 
-可转债页面不存数据，直接用浏览器请求东方财富的公开接口（接口带 CORS），
+可转债页面目前直接 iframe 嵌入东方财富的「新股申购 - 可转债」页面，
 所以永远是最新的；Actions 里只保留每天 07:33 的新债提醒。
 
 ## 新增一个页面
@@ -102,7 +101,8 @@ python -m http.server 8000
 ## 技术说明
 
 - 纯静态页面，没有构建工具、没有框架。
-- 首页只有一份链接列表，页面里的说明文字都放在各自的页面上。
+- 首页是标题 + 两行链接，内容铺满整个宽度，不再居中收窄。
+- 配色使用 GitHub Primer 的浅色 / 深色变量。
 - Chart.js 4.5.0、Leaflet 1.9.4 走 cdnjs，锁定版本并带 SRI 校验。
 - `.nojekyll` 让 GitHub Pages 跳过 Jekyll 处理。
 - 首页和 404 由 `build.py` 生成，提交回 main。

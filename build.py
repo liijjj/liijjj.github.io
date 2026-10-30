@@ -50,8 +50,8 @@ def shell(title: str, description: str, body: str) -> str:
 <title>{escape(title)}</title>
 <meta name="description" content="{escape(description)}">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#f4f6f9" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0b1120" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f6f8fa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/site.css">
 </head>
@@ -66,7 +66,7 @@ def build_home(site: dict) -> str:
     pages = site.get("pages") or []
     links = "\n".join(link_item(p) for p in pages)
     body = f"""<main class="wrap home">
-  <h1 class="sr-only">{escape(site.get("title", "Liijjj"))}</h1>
+  <h1>{escape(site.get("title", "Liijjj"))}</h1>
   <ul class="links">
 {links}
   </ul>

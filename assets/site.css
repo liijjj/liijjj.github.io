@@ -1,37 +1,39 @@
 /* 全站共享样式：颜色变量、基础排版、首页链接、卡片与页脚 */
 
+/* 配色取自 GitHub Primer（浅色 / 深色） */
+
 :root {
   color-scheme: light dark;
 
-  --bg: #f4f6f9;
+  --bg: #f6f8fa;
   --bg-elev: #ffffff;
-  --fg: #0f172a;
-  --fg-muted: #64748b;
-  --border: #e2e8f0;
-  --border-strong: #cbd5e1;
-  --accent: #2563eb;
-  --ok: #059669;
-  --warn: #d97706;
-  --bad: #dc2626;
-  --radius: 16px;
-  --shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 12px 32px -20px rgba(15, 23, 42, .28);
+  --fg: #1f2328;
+  --fg-muted: #59636e;
+  --border: #d0d7de;
+  --border-strong: #afb8c1;
+  --accent: #0969da;
+  --ok: #1a7f37;
+  --warn: #9a6700;
+  --bad: #cf222e;
+  --radius: 10px;
+  --shadow: 0 1px 0 rgba(31, 35, 40, .04), 0 3px 6px rgba(140, 149, 159, .15);
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
     "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0b1120;
-    --bg-elev: #121a2b;
-    --fg: #e6edf7;
-    --fg-muted: #94a3b8;
-    --border: #1f2a3d;
-    --border-strong: #334155;
-    --accent: #60a5fa;
-    --ok: #34d399;
-    --warn: #fbbf24;
-    --bad: #f87171;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 12px 32px -20px rgba(0, 0, 0, .9);
+    --bg: #0d1117;
+    --bg-elev: #161b22;
+    --fg: #e6edf3;
+    --fg-muted: #8b949e;
+    --border: #30363d;
+    --border-strong: #484f58;
+    --accent: #2f81f7;
+    --ok: #3fb950;
+    --warn: #d29922;
+    --bad: #f85149;
+    --shadow: 0 0 0 1px rgba(240, 246, 252, .02);
   }
 }
 
@@ -63,9 +65,9 @@ h1, h2, h3, p {
 
 .wrap {
   width: 100%;
-  max-width: 1040px;
-  margin: 0 auto;
-  padding: 0 20px;
+  max-width: none;
+  margin: 0;
+  padding: 0 24px;
 }
 
 .sr-only {
@@ -80,11 +82,17 @@ h1, h2, h3, p {
   border: 0;
 }
 
-/* ---------- 首页：只有链接 ---------- */
+/* ---------- 首页：标题 + 链接 ---------- */
 
 .home {
-  max-width: 640px;
-  padding-top: 56px;
+  padding-top: 48px;
+}
+
+.home h1 {
+  margin: 0 0 18px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -.01em;
 }
 
 .links {

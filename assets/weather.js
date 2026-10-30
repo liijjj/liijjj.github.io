@@ -178,29 +178,31 @@
     var icon = iconEmoji((now && now.icon) || (first && first.icon));
     var temp = (now && now.temp) || (first && first.temp) || "--";
     var text = (now && now.text) || (first && first.text) || "";
-    var parts = [];
     var humidity = (now && now.humidity) || (first && first.humidity);
     var windDir = (now && now.windDir) || (first && first.windDir);
     var windScale = (now && now.windScale) || (first && first.windScale);
     var pressure = (now && now.pressure) || (first && first.pressure);
 
-    if (now && now.feelsLike) parts.push("体感 " + now.feelsLike + "°");
-    if (humidity) parts.push("湿度 " + humidity + "%");
-    if (windDir) parts.push(windDir + " " + windScale + " 级");
-    if (pressure) parts.push("气压 " + pressure + " hPa");
-    if (now && now.vis) parts.push("能见度 " + now.vis + " km");
-    if (now && now.obsTime) parts.push("观测 " + clock(now.obsTime));
-    if (!now) parts.push("就近小时预报");
+    line.textContent = [icon, temp + "° " + text].join(" ").trim();
 
+    // AQI 数字，颜色跟 WAQI 的等级色一致
     var air = waqiPayload();
     if (air) {
-      var pm25 = air.iaqi && air.iaqi.pm25;
-      if (pm25 && pm25.v != null) parts.push("PM2.5 " + pm25.v);
-      parts.push("AQI " + air.aqi + " " + aqiLevel(air.aqi).name);
+      var level = aqiLevel(air.aqi);
+      var value = document.createElement("span");
+      value.className = "aqi-value " + level.cls;
+      value.textContent = air.aqi;
+      value.title = "AQI " + air.aqi + " " + level.name + "（美标，WAQI）";
+      line.appendChild(document.createTextNode(" · "));
+      line.appendChild(value);
     }
 
-    line.textContent = [icon, temp + "° " + text].join(" ").trim();
-    if (parts.length) line.textContent += " · " + parts.join(" · ");
+    var tail = [];
+    if (humidity) tail.push("湿度 " + humidity + "%");
+    if (windDir) tail.push(windDir + " " + windScale + " 级");
+    if (pressure) tail.push("气压 " + pressure + " hPa");
+    if (!now) tail.push("就近小时预报");
+    if (tail.length) line.appendChild(document.createTextNode(" · " + tail.join(" · ")));
   }
 
   // ---------- 24 小时 ----------
@@ -487,12 +489,12 @@
   // ---------- 空气质量（WAQI / aqicn.org） ----------
 
   var AQI_LEVELS = [
-    { max: 50, name: "优", cls: "aqi-l1" },
-    { max: 100, name: "良", cls: "aqi-l2" },
-    { max: 150, name: "轻度污染", cls: "aqi-l3" },
-    { max: 200, name: "中度污染", cls: "aqi-l4" },
-    { max: 300, name: "重度污染", cls: "aqi-l5" },
-    { max: Infinity, name: "严重污染", cls: "aqi-l6" }
+    { max: 50, name: "优", cls: "aqi-c1" },
+    { max: 100, name: "良", cls: "aqi-c2" },
+    { max: 150, name: "轻度污染", cls: "aqi-c3" },
+    { max: 200, name: "中度污染", cls: "aqi-c4" },
+    { max: 300, name: "重度污染", cls: "aqi-c5" },
+    { max: Infinity, name: "严重污染", cls: "aqi-c6" }
   ];
 
   function aqiLevel(value) {

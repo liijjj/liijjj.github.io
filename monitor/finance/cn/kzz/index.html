@@ -4,59 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>可转债</title>
-<meta name="description" content="可转债申购、中签与上市信息，数据来自东方财富。">
-<meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#f4f6f9" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0b1120" media="(prefers-color-scheme: dark)">
-<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/site.css">
-<link rel="stylesheet" href="/assets/kzz.css">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #fff;
+  }
+
+  iframe {
+    display: block;
+    width: 100%;
+    height: 100vh;
+    border: 0;
+  }
+</style>
 </head>
 <body>
-
-<header class="wrap page-head">
-  <a class="crumb" href="/">← 首页</a>
-  <div class="head-row">
-    <div>
-      <h1>可转债</h1>
-      <p class="lede">申购、中签、上市信息 · 数据来自东方财富</p>
-    </div>
-    <span class="kzz-status" id="kzz-status">正在加载…</span>
-  </div>
-  <p class="notice" id="notice" hidden></p>
-</header>
-
-<main class="wrap">
-  <div class="toolbar">
-    <span id="kzz-total">—</span>
-    <div class="toolbar-right">
-      <label class="size-field">每页
-        <select id="page-size">
-          <option value="50" selected>50 条</option>
-          <option value="100">100 条</option>
-          <option value="200">200 条</option>
-        </select>
-      </label>
-      <button type="button" class="ghost" id="reload">刷新</button>
-    </div>
-  </div>
-
-  <div class="table-wrap">
-    <table class="kzz-table">
-      <thead><tr id="kzz-head"></tr></thead>
-      <tbody id="kzz-body"></tbody>
-    </table>
-  </div>
-
-  <nav class="pager" id="pager" hidden>
-    <button type="button" id="prev">上一页</button>
-    <span id="page-info"></span>
-    <button type="button" id="next">下一页</button>
-  </nav>
-
-  <p class="source">数据来源：东方财富网 · 排序与字段和东方财富「新股申购 - 可转债」一致</p>
-</main>
-
-<script src="/assets/kzz.js"></script>
+<iframe src="https://data.eastmoney.com/xg/xg/?mkt=kzz" title="可转债 - 东方财富" referrerpolicy="no-referrer-when-downgrade"></iframe>
 </body>
 </html>
