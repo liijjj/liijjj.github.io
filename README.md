@@ -10,7 +10,7 @@
 
 | 页面 | 更新方式 | 数据来源 |
 | --- | --- | --- |
-| 衢州天气 | 每小时第 7 分钟 | 和风天气（实况、24 小时预报、分钟级降水、AQI、预警） |
+| 衢州天气 | 每小时第 7 分钟 | 和风天气（实况、24 小时预报、分钟级降水、预警）+ WAQI（空气质量） |
 | 可转债日历 | 每天（计划 07:33） | AkShare，申购日推送钉钉 |
 
 天气页会显示**真实的数据时间**：超过 90 分钟标黄、超过 270 分钟标红，不会假装数据是新的。
@@ -42,8 +42,7 @@ index.html 404.html         由 build.py 生成，不要手改
 weather/quzhou/weather_24h.json   24 小时预报
 weather/quzhou/weather_now.json   实况
 weather/quzhou/weather_minutely.json
-weather/quzhou/aqi_hourly.json
-weather/quzhou/aqi_current.json
+weather/quzhou/aqi_waqi.json       空气质量（WAQI / aqicn.org）
 weather/quzhou/weather_alert.json
 weather/quzhou/meta.json          本次抓取时间、各接口成功/失败
 ```
@@ -87,8 +86,8 @@ python -m http.server 8000
 ```
 
 天气页默认从 `data` 分支读取线上数据。要离线调试，把 JSON 放到
-`monitor/weather/quzhou/output/`（该目录已在 .gitignore 中）后，临时把
-`assets/weather.js` 里的 `DATA_BASE` 改成 `./output/`。
+`monitor/weather/quzhou/output/`（该目录已在 .gitignore 中），然后打开
+`/monitor/weather/quzhou/?data=./output/` 即可改用本地数据。
 
 ## Secrets
 
@@ -98,13 +97,16 @@ python -m http.server 8000
 | --- | --- |
 | `QWEATHER_KEY` | 和风天气 API Key |
 | `QWEATHER_DOMAIN` | 和风天气的 API 域名 |
+| `AQICN_TOKEN` | WAQI / aqicn.org 的 API token（未配置时用页面里那个公开 token） |
 | `DINGTALK_WEBHOOK` | 可转债申购提醒的钉钉机器人地址 |
 
-AQI 地图瓦片的 token 是公开的，写在 `assets/weather.js` 里（瓦片服务要求把 token 放在 URL 中）。
+空气质量的全部内容（AQI、污染物分指数、未来三天预报、地图瓦片）都来自 WAQI，
+采用美国 EPA 口径。地图瓦片 token 是公开的，写在 `assets/weather.js` 里（瓦片服务要求把 token 放在 URL 中）。
 
 ## 技术说明
 
 - 纯静态页面，没有构建工具、没有框架。
+- 首页默认列表视图，右上角可以切到卡片视图，选择存在浏览器 localStorage 里。
 - Chart.js 4.5.0、Leaflet 1.9.4 走 cdnjs，锁定版本并带 SRI 校验。
 - `.nojekyll` 让 GitHub Pages 跳过 Jekyll 处理。
 - 首页和 404 由 `build.py` 生成，提交回 main。

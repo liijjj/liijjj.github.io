@@ -101,13 +101,19 @@ h1, h2, h3, p {
   max-width: 46em;
 }
 
-.card-grid {
+/* 页面列表：默认列表，右上角可切卡片 */
+
+.page-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr));
+  gap: 10px;
+}
+
+.page-list.is-grid {
   gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr));
 }
 
 .card {
@@ -117,22 +123,26 @@ h1, h2, h3, p {
   box-shadow: var(--shadow);
 }
 
-.card-link .card {
+.page-card {
   display: flex;
   flex-direction: column;
   gap: 8px;
   height: 100%;
-  padding: 18px;
+  padding: 16px 18px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
   transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
 }
 
-.card-link .card:hover {
+.page-card:hover {
   transform: translateY(-2px);
   border-color: var(--border-strong);
   box-shadow: 0 2px 4px rgba(15, 23, 42, .05), 0 18px 38px -22px rgba(15, 23, 42, .4);
 }
 
-.card-top {
+.pc-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -140,20 +150,25 @@ h1, h2, h3, p {
   min-height: 22px;
 }
 
-.card-link h2 {
-  margin-top: 4px;
+.pc-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pc-body h2 {
+  margin: 4px 0 0;
   font-size: 1.08rem;
   letter-spacing: -.01em;
 }
 
 .card-desc {
+  margin-top: 2px;
   color: var(--fg-muted);
   font-size: .86rem;
   line-height: 1.55;
-  flex: 1 1 auto;
 }
 
-.card-foot {
+.pc-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -168,6 +183,118 @@ h1, h2, h3, p {
 .go {
   color: var(--accent);
   font-weight: 600;
+}
+
+/* 列表模式 */
+
+.page-list.is-list .page-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "chip body status"
+    "chip body foot";
+  align-items: center;
+  column-gap: 16px;
+  row-gap: 2px;
+  padding: 12px 16px;
+}
+
+.page-list.is-list .pc-head {
+  display: contents;
+}
+
+.page-list.is-list .pc-head .chip {
+  grid-area: chip;
+}
+
+.page-list.is-list .pc-head .card-status {
+  grid-area: status;
+  justify-self: end;
+  align-self: end;
+}
+
+.page-list.is-list .pc-body {
+  grid-area: body;
+}
+
+.page-list.is-list .pc-body h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.page-list.is-list .pc-body .card-desc {
+  margin-top: 2px;
+  font-size: .82rem;
+}
+
+.page-list.is-list .pc-foot {
+  grid-area: foot;
+  margin: 0;
+  padding: 0;
+  border-top: 0;
+  justify-content: flex-end;
+  gap: 12px;
+  align-self: start;
+}
+
+@media (max-width: 600px) {
+  .page-list.is-list .page-card {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "chip status"
+      "body body"
+      "foot foot";
+    row-gap: 6px;
+  }
+
+  .page-list.is-list .pc-body {
+    margin-top: 2px;
+  }
+
+  .page-list.is-list .pc-foot {
+    justify-content: space-between;
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+}
+
+/* 视图切换 */
+
+.view-switch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-elev);
+}
+
+.view-switch button {
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: .78rem;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.view-switch button:hover {
+  color: var(--fg);
+}
+
+.view-switch button[aria-pressed="true"] {
+  background: var(--accent);
+  color: #fff;
+}
+
+@media (prefers-color-scheme: dark) {
+  .view-switch button[aria-pressed="true"] {
+    color: #0b1120;
+  }
 }
 
 /* ---------- 小标签与状态 ---------- */

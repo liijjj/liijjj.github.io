@@ -57,15 +57,17 @@ def page_card(page: dict) -> str:
     cadence = escape(page.get("cadence", ""))
     foot = f'<span class="cadence">{cadence}</span>' if cadence else "<span></span>"
 
-    return f"""      <li class="card-link">
-        <a class="card" href="{escape(path)}">
-          <div class="card-top">
+    return f"""      <li>
+        <a class="page-card" href="{escape(path)}">
+          <div class="pc-head">
             <span class="chip chip--{accent}">{category}</span>
             {badge}
           </div>
-          <h2>{title}</h2>
-          <p class="card-desc">{desc}</p>
-          <div class="card-foot">
+          <div class="pc-body">
+            <h2>{title}</h2>
+            <p class="card-desc">{desc}</p>
+          </div>
+          <div class="pc-foot">
             {foot}
             <span class="go">打开 →</span>
           </div>
@@ -105,10 +107,14 @@ def build_home(site: dict) -> str:
     <h1>{title}</h1>
     <p class="lede">{description}</p>
   </div>
+  <div class="view-switch" role="group" aria-label="显示方式">
+    <button type="button" data-view="list" aria-pressed="true">列表</button>
+    <button type="button" data-view="grid" aria-pressed="false">卡片</button>
+  </div>
 </header>
 
 <main class="wrap">
-  <ul class="card-grid">
+  <ul class="page-list is-list" id="pages">
 {cards}
   </ul>
 </main>

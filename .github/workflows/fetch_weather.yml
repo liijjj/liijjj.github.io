@@ -41,6 +41,7 @@ jobs:
         env:
           QWEATHER_KEY: ${{ secrets.QWEATHER_KEY }}
           QWEATHER_DOMAIN: ${{ secrets.QWEATHER_DOMAIN }}
+          AQICN_TOKEN: ${{ secrets.AQICN_TOKEN }}
         run: python monitor/weather/quzhou/fetch_data.py --out "$RUNNER_TEMP/weather"
 
       - name: 发布到 data 分支
@@ -65,6 +66,8 @@ jobs:
             git rm -rf . >/dev/null 2>&1 || true
           fi
 
+          # 先清空本目录，避免已下线的数据文件残留在 data 分支
+          rm -rf weather/quzhou
           mkdir -p weather/quzhou
           cp "$OUT"/*.json weather/quzhou/
 

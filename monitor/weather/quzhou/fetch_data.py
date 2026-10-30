@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""抓取衢州天气数据（和风天气），写入 JSON 文件。
+"""抓取衢州天气与空气质量数据，写入 JSON 文件。
+
+数据来源：
+- 天气预报、实况、分钟级降水、气象预警：和风天气
+- 空气质量（AQI、污染物分指数、预报）：WAQI（aqicn.org）
 
 设计要点：
 - 每个接口互相独立，某个接口失败不会影响其他接口落盘；
@@ -7,7 +11,8 @@
 - 输出目录由 --out 指定，GitHub Actions 会把结果推送到 data 分支。
 
 用法：
-    QWEATHER_KEY=xxx QWEATHER_DOMAIN=xxx python fetch_data.py --out output
+    QWEATHER_KEY=xxx QWEATHER_DOMAIN=xxx AQICN_TOKEN=xxx \
+        python fetch_data.py --out output
 """
 
 from __future__ import annotations
@@ -29,8 +34,15 @@ LOCATION = {"name": "衢州", "lat": 28.98, "lon": 118.865}
 TIMEOUT = 12
 RETRIES = 3
 
+# 页面瓦片使用的公开 token，同时也是可用的 WAQI API token。
+# 仓库 Secrets 里配置了 AQICN_TOKEN 时优先使用 Secrets。
+FALLBACK_AQICN_TOKEN = "fcb33ba925bd1ca319369d0eb68a0170054b7b05"
 
-def endpoints(domain: str, key: str) -> list[dict[str, Any]]:
+# WAQI 的城市监测站。要换城市时改这里，页面上的站名取自接口返回。
+WAQI_CITY = "quzhou"
+
+
+def endpoints(domain: str, key: str, aqicn_token: str) -> list[dict[str, Any]]:
     lon = LOCATION["lon"]
     lat = LOCATION["lat"]
     point = f"{lon},{lat}"
@@ -55,15 +67,12 @@ def endpoints(domain: str, key: str) -> list[dict[str, Any]]:
             "critical": False,
         },
         {
-            "name": "aqi_hourly",
-            "file": "aqi_hourly.json",
-            "url": f"{base}/airquality/v1/hourly/{lat}/{lon}?key={key}",
-            "critical": False,
-        },
-        {
-            "name": "aqi_current",
-            "file": "aqi_current.json",
-            "url": f"{base}/airquality/v1/current/{lat}/{lon}?key={key}",
+            "name": "aqi_waqi",
+            "file": "aqi_waqi.json",
+            "url": (
+                f"https://api.waqi.info/feed/{WAQI_CITY}/"
+                f"?token={aqicn_token}"
+            ),
             "critical": False,
         },
         {
@@ -92,6 +101,14 @@ def fetch_json(session: requests.Session, url: str) -> dict[str, Any]:
 def check(name: str, data: Any) -> None:
     if not isinstance(data, dict):
         raise ValueError("返回内容不是 JSON 对象")
+    if name == "aqi_waqi":
+        if data.get("status") != "ok":
+            detail = json.dumps(data, ensure_ascii=False)[:200]
+            raise ValueError(f"WAQI 返回异常：{detail}")
+        payload = data.get("data")
+        if not isinstance(payload, dict) or payload.get("aqi") is None:
+            raise ValueError("WAQI 没有返回 AQI 数值")
+        return
     code = data.get("code")
     if code is not None and str(code) != "200":
         message = str(data.get("message") or "").strip()
@@ -119,6 +136,7 @@ def main() -> int:
         return 2
 
     domain = domain.removeprefix("https://").removeprefix("http://").strip("/")
+    aqicn_token = os.environ.get("AQICN_TOKEN", "").strip() or FALLBACK_AQICN_TOKEN
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -134,7 +152,7 @@ def main() -> int:
     critical_ok = True
     ok_count = 0
 
-    for endpoint in endpoints(domain, key):
+    for endpoint in endpoints(domain, key, aqicn_token):
         url = f"{endpoint['url']}&_t={stamp}"
         record: dict[str, Any] = {
             "file": endpoint["file"],
@@ -146,7 +164,10 @@ def main() -> int:
             check(endpoint["name"], data)
             write_json(out / endpoint["file"], data)
             record["ok"] = True
-            record["updateTime"] = data.get("updateTime")
+            payload = data.get("data")
+            record["updateTime"] = data.get("updateTime") or (
+                payload.get("time", {}).get("iso") if isinstance(payload, dict) else None
+            )
             ok_count += 1
             print(f"[ok]   {endpoint['name']} -> {endpoint['file']}")
         except Exception as exc:  # noqa: BLE001 - 单个接口失败不影响其他接口
@@ -161,7 +182,7 @@ def main() -> int:
         "generatedAt": now.isoformat(timespec="seconds"),
         "generatedAtUnix": int(now.timestamp()),
         "location": LOCATION,
-        "source": "QWeather",
+        "source": "QWeather (天气) + WAQI (空气质量)",
         "ok": ok_count == len(results),
         "criticalOk": critical_ok,
         "endpoints": results,
