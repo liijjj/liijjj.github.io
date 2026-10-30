@@ -23,68 +23,66 @@
   </div>
   <div class="head-actions">
     <div class="freshness" id="freshness"><span id="freshness-text">正在载入数据…</span></div>
+    <label class="layout-field" title="每行显示几个板块">
+      布局
+      <select id="cols">
+        <option value="1">1 列</option>
+        <option value="2" selected>2 列</option>
+        <option value="3">3 列</option>
+        <option value="4">4 列</option>
+      </select>
+    </label>
     <button class="refresh" id="refresh" type="button">刷新</button>
   </div>
 </header>
 
-<main class="wrap weather-grid">
+<main class="wrap">
+  <p class="now-line" id="now-line">正在载入实况…</p>
 
-  <p class="now-line card-wide" id="now-line">正在载入实况…</p>
+  <div class="board cols-2" id="board">
 
-  <section class="card card-wide" aria-labelledby="h24">
-    <div class="card-head">
-      <h2 id="h24">未来 24 小时</h2>
-      <span class="hint" id="h24-hint"></span>
-    </div>
-    <div class="chart-box"><canvas id="chart-24h" role="img" aria-label="未来 24 小时气温与降水趋势"></canvas></div>
-    <div class="chips" id="highlights"></div>
-  </section>
-
-  <section class="card card-wide" aria-labelledby="hai">
-    <div class="card-head">
-      <h2 id="hai">空气质量</h2>
-      <span class="hint" id="aqi-hint"></span>
-    </div>
-    <div class="aqi-layout">
-      <div class="aqi-main">
-        <div class="aqi-summary">
-          <div class="aqi-big" id="aqi-big">—</div>
-          <div>
-            <div class="aqi-cat" id="aqi-cat">数据载入中</div>
-            <div class="muted small" id="aqi-primary"></div>
-            <div class="muted small" id="aqi-station"></div>
-          </div>
-        </div>
-        <p class="pollutant-caption" id="aqi-pollutant-caption">各污染物分指数</p>
-        <div class="pollutants" id="aqi-pollutants"></div>
-        <div class="aqi-forecast" id="aqi-forecast" hidden></div>
+    <section class="card" data-widget="hourly" aria-labelledby="h24">
+      <div class="card-head">
+        <button class="drag" type="button" aria-label="拖动排序">⠿</button>
+        <h2 id="h24">未来 24 小时</h2>
+        <span class="hint" id="h24-hint"></span>
       </div>
-      <div class="aqi-map-wrap">
-        <div class="map" id="aqi-map" aria-label="空气质量地图"></div>
-        <p class="source">美标 AQI · 分指数与地图瓦片来自 aqicn.org（WAQI）</p>
+      <div class="chart-box"><canvas id="chart-24h" role="img" aria-label="未来 24 小时气温与降水趋势"></canvas></div>
+      <div class="chips" id="highlights"></div>
+    </section>
+
+    <section class="card" data-widget="air" aria-labelledby="hai">
+      <div class="card-head">
+        <button class="drag" type="button" aria-label="拖动排序">⠿</button>
+        <h2 id="hai">空气质量地图</h2>
+        <span class="hint">实时瓦片</span>
       </div>
-    </div>
-  </section>
+      <div class="map" id="aqi-map" aria-label="空气质量地图"></div>
+      <p class="source">AQI 瓦片 © aqicn.org · 地图 © OpenStreetMap</p>
+    </section>
 
-  <section class="card" aria-labelledby="hmin">
-    <div class="card-head">
-      <h2 id="hmin">分钟级降水</h2>
-      <span class="hint" id="minutely-time"></span>
-    </div>
-    <p class="minutely-summary" id="minutely-summary">正在载入…</p>
-    <div class="chart-box chart-box-sm" id="minutely-chart-wrap" hidden>
-      <canvas id="chart-minutely" role="img" aria-label="未来两小时降水强度"></canvas>
-    </div>
-  </section>
+    <section class="card" data-widget="minutely" aria-labelledby="hmin">
+      <div class="card-head">
+        <button class="drag" type="button" aria-label="拖动排序">⠿</button>
+        <h2 id="hmin">分钟级降水</h2>
+        <span class="hint" id="minutely-time"></span>
+      </div>
+      <p class="minutely-summary" id="minutely-summary">正在载入…</p>
+      <div class="chart-box chart-box-sm" id="minutely-chart-wrap" hidden>
+        <canvas id="chart-minutely" role="img" aria-label="未来两小时降水强度"></canvas>
+      </div>
+    </section>
 
-  <section class="card" aria-labelledby="halert">
-    <div class="card-head">
-      <h2 id="halert">气象预警</h2>
-      <span class="hint" id="alert-hint"></span>
-    </div>
-    <div class="alerts" id="alerts"><p class="empty">正在载入…</p></div>
-  </section>
+    <section class="card" data-widget="alerts" aria-labelledby="halert">
+      <div class="card-head">
+        <button class="drag" type="button" aria-label="拖动排序">⠿</button>
+        <h2 id="halert">气象预警</h2>
+        <span class="hint" id="alert-hint"></span>
+      </div>
+      <div class="alerts" id="alerts"><p class="empty">正在载入…</p></div>
+    </section>
 
+  </div>
 </main>
 
 <footer class="site-footer wrap">
@@ -94,6 +92,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js" integrity="sha512-Y51n9mtKTVBh3Jbx5pZSJNDDMyY+yGe77DGtBPzRlgsf/YLCh13kSZ3JmfHGzYFCmOndraf0sQgfM654b7dJ3w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.6/Sortable.min.js" integrity="sha512-csIng5zcB+XpulRUa+ev1zKo7zRNGpEaVfNB9On1no9KYTEY/rLGAEEpvgdw6nim1WdTuihZY1eqZ31K7/fZjw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="/assets/weather.js"></script>
 </body>
 </html>

@@ -12,61 +12,13 @@
 <link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>
-<header class="site-header wrap">
-  <div>
-    <p class="eyebrow">个人看板</p>
-    <h1>Liijjj</h1>
-    <p class="lede">自己写的一些小工具和看板，数据由 GitHub Actions 定时更新。</p>
-  </div>
-  <div class="view-switch" role="group" aria-label="显示方式">
-    <button type="button" data-view="list" aria-pressed="true">列表</button>
-    <button type="button" data-view="grid" aria-pressed="false">卡片</button>
-  </div>
-</header>
-
-<main class="wrap">
-  <ul class="page-list is-list" id="pages">
-      <li>
-        <a class="page-card" href="/monitor/weather/quzhou/">
-          <div class="pc-head">
-            <span class="chip chip--sky">天气</span>
-            <span class="card-status" data-status="https://raw.githubusercontent.com/liijjj/liijjj.github.io/data/weather/quzhou/weather_24h.json" data-field="updateTime">更新状态加载中</span>
-          </div>
-          <div class="pc-body">
-            <h2>衢州天气</h2>
-            <p class="card-desc">实况、24 小时预报、分钟级降水、空气质量与气象预警。</p>
-          </div>
-          <div class="pc-foot">
-            <span class="cadence">每小时</span>
-            <span class="go">打开 →</span>
-          </div>
-        </a>
-      </li>
-      <li>
-        <a class="page-card" href="/monitor/finance/cn/kzz/">
-          <div class="pc-head">
-            <span class="chip chip--amber">财经</span>
-            
-          </div>
-          <div class="pc-body">
-            <h2>可转债日历</h2>
-            <p class="card-desc">可转债的申购、中签与上市信息，申购日早上推送提醒。</p>
-          </div>
-          <div class="pc-foot">
-            <span class="cadence">每天</span>
-            <span class="go">打开 →</span>
-          </div>
-        </a>
-      </li>
+<main class="wrap home">
+  <h1 class="sr-only">Liijjj</h1>
+  <ul class="links">
+        <li><a href="/monitor/weather/quzhou/">衢州天气</a></li>
+        <li><a href="/monitor/finance/cn/kzz/">可转债</a></li>
   </ul>
 </main>
-
-<footer class="site-footer wrap">
-  <span>共 2 个页面 · 数据由 GitHub Actions 定时更新</span>
-  <a href="https://github.com/liijjj/liijjj.github.io" rel="noopener">源码</a>
-</footer>
-
-<script src="/assets/portal.js" defer></script>
 
 </body>
 </html>

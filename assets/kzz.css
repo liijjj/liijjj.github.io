@@ -1,0 +1,238 @@
+/* 可转债页：表头、表格、翻页 */
+
+.page-head {
+  padding-top: 30px;
+  padding-bottom: 14px;
+}
+
+.crumb {
+  font-size: .8rem;
+  color: var(--fg-muted);
+}
+
+.crumb:hover {
+  color: var(--accent);
+}
+
+.head-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.page-head h1 {
+  margin: 0 0 6px;
+  font-size: clamp(1.6rem, 4vw, 2.1rem);
+  letter-spacing: -.02em;
+  line-height: 1.15;
+}
+
+.kzz-status {
+  font-size: .78rem;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.notice {
+  margin-top: 12px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(220, 38, 38, .28);
+  background: rgba(220, 38, 38, .07);
+  color: var(--bad);
+  font-size: .84rem;
+  line-height: 1.55;
+}
+
+.notice b {
+  font-weight: 650;
+}
+
+/* ---------- 工具栏 ---------- */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 12px 0 10px;
+  font-size: .8rem;
+  color: var(--fg-muted);
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.size-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.size-field select {
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--fg);
+  font: inherit;
+  font-size: .78rem;
+}
+
+.ghost {
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: .78rem;
+  cursor: pointer;
+}
+
+.ghost:hover {
+  color: var(--fg);
+  border-color: var(--border-strong);
+}
+
+/* ---------- 表格 ---------- */
+
+.table-wrap {
+  max-height: 72vh;
+  overflow: auto;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.kzz-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  white-space: nowrap;
+  font-size: .8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.kzz-table th,
+.kzz-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  background: var(--bg-elev);
+}
+
+.kzz-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--bg);
+  color: var(--fg-muted);
+  font-weight: 600;
+  font-size: .74rem;
+  white-space: nowrap;
+}
+
+.kzz-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.kzz-table tbody tr:hover td {
+  background: var(--bg);
+}
+
+.kzz-table .is-today td {
+  color: var(--bad);
+  font-weight: 650;
+}
+
+.kzz-table .num {
+  text-align: right;
+}
+
+.kzz-table .mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .76rem;
+}
+
+/* 前两列固定，横向滚动时保留行身份 */
+
+.kzz-table th:nth-child(1),
+.kzz-table td:nth-child(1) {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 76px;
+}
+
+.kzz-table th:nth-child(2),
+.kzz-table td:nth-child(2) {
+  position: sticky;
+  left: 76px;
+  z-index: 2;
+  min-width: 84px;
+}
+
+.kzz-table thead th:nth-child(1),
+.kzz-table thead th:nth-child(2) {
+  z-index: 4;
+}
+
+/* ---------- 翻页 ---------- */
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 14px;
+  font-size: .8rem;
+  color: var(--fg-muted);
+}
+
+.pager button {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--fg);
+  font: inherit;
+  font-size: .8rem;
+  cursor: pointer;
+}
+
+.pager button:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.pager button:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.source {
+  margin-top: 14px;
+  padding-bottom: 40px;
+  font-size: .72rem;
+  color: var(--fg-muted);
+}
+
+@media (max-width: 600px) {
+  .kzz-table {
+    font-size: .76rem;
+  }
+
+  .kzz-table th,
+  .kzz-table td {
+    padding: 7px 8px;
+  }
+}

@@ -28,6 +28,7 @@
   var lastWeatherKey = "";
   var updatedAt = null;
   var mapInited = false;
+  var weatherMap = null;
   var loading = false;
 
   // ---------- 时间与格式化 ----------
@@ -158,7 +159,6 @@
     renderNowLine();
     renderHourly();
     renderMinutely();
-    renderAqi();
     renderAlerts();
     initMap();
   }
@@ -178,26 +178,25 @@
     var icon = iconEmoji((now && now.icon) || (first && first.icon));
     var temp = (now && now.temp) || (first && first.temp) || "--";
     var text = (now && now.text) || (first && first.text) || "";
-    var main = [];
-    var extra = [];
+    var parts = [];
 
-    if (now && now.feelsLike) main.push("体感 " + now.feelsLike + "°");
-    if (now && now.humidity) main.push("湿度 " + now.humidity + "%");
-    if (now && now.windDir) main.push(now.windDir + " " + now.windScale + " 级");
-    if (now && now.vis) extra.push("能见度 " + now.vis + " km");
-    if (now && now.obsTime) extra.push("观测 " + clock(now.obsTime));
-    if (!now) main.push("就近小时预报");
+    if (now && now.feelsLike) parts.push("体感 " + now.feelsLike + "°");
+    if (now && now.humidity) parts.push("湿度 " + now.humidity + "%");
+    if (now && now.windDir) parts.push(now.windDir + " " + now.windScale + " 级");
+    if (now && now.pressure) parts.push("气压 " + now.pressure + " hPa");
+    if (now && now.vis) parts.push("能见度 " + now.vis + " km");
+    if (now && now.obsTime) parts.push("观测 " + clock(now.obsTime));
+    if (!now) parts.push("就近小时预报");
+
+    var air = waqiPayload();
+    if (air) {
+      var pm25 = air.iaqi && air.iaqi.pm25;
+      if (pm25 && pm25.v != null) parts.push("PM2.5 " + pm25.v);
+      parts.push("AQI " + air.aqi + " " + aqiLevel(air.aqi).name);
+    }
 
     line.textContent = [icon, temp + "° " + text].join(" ").trim();
-    if (main.length) line.textContent += " · " + main.join(" · ");
-
-    // 窄屏放不下的信息，桌面端再显示
-    if (extra.length) {
-      var span = document.createElement("span");
-      span.className = "now-extra";
-      span.textContent = " · " + extra.join(" · ");
-      line.appendChild(span);
-    }
+    if (parts.length) line.textContent += " · " + parts.join(" · ");
   }
 
   // ---------- 24 小时 ----------
@@ -492,15 +491,6 @@
     { max: Infinity, name: "严重污染", cls: "aqi-l6" }
   ];
 
-  var POLLUTANTS = {
-    pm25: "PM2.5",
-    pm10: "PM10",
-    o3: "O₃",
-    no2: "NO₂",
-    so2: "SO₂",
-    co: "CO"
-  };
-
   function aqiLevel(value) {
     for (var i = 0; i < AQI_LEVELS.length; i++) {
       if (value <= AQI_LEVELS[i].max) return AQI_LEVELS[i];
@@ -515,120 +505,6 @@
     }
     return null;
   }
-
-  function renderAqi() {
-    var data = waqiPayload();
-    var big = $("aqi-big");
-    var cat = $("aqi-cat");
-
-    if (!data) {
-      big.className = "aqi-big";
-      cat.className = "aqi-cat";
-      setText("aqi-big", "—");
-      setText("aqi-cat", "数据不可用");
-      setText("aqi-primary", "");
-      setText("aqi-station", "");
-      $("aqi-hint").textContent = "";
-      $("aqi-pollutants").textContent = "";
-      $("aqi-pollutant-caption").hidden = true;
-      $("aqi-forecast").textContent = "";
-      $("aqi-forecast").hidden = true;
-      return;
-    }
-
-    var level = aqiLevel(data.aqi);
-    big.className = "aqi-big " + level.cls;
-    setText("aqi-big", data.aqi);
-    cat.className = "aqi-cat " + level.cls;
-    setText("aqi-cat", level.name);
-
-    var dominant = data.dominentpol ? (POLLUTANTS[data.dominentpol] || data.dominentpol) : "";
-    setText("aqi-primary", dominant ? "首要污染物 " + dominant : "");
-    setText("aqi-station", (data.city && data.city.name) || "");
-
-    var at = data.time && data.time.iso;
-    $("aqi-hint").textContent = at ? "观测 " + stamp(at) : "";
-
-    renderPollutants(data);
-    renderAqiForecast(data);
-  }
-
-  function renderPollutants(data) {
-    var box = $("aqi-pollutants");
-    box.textContent = "";
-    var iaqi = data.iaqi || {};
-
-    Object.keys(POLLUTANTS).forEach(function (key) {
-      var item = iaqi[key];
-      if (!item || item.v == null) return;
-      var cell = document.createElement("div");
-      cell.className = "pollutant";
-      var label = document.createElement("b");
-      label.textContent = POLLUTANTS[key];
-      var value = document.createElement("span");
-      value.textContent = item.v;
-      cell.appendChild(label);
-      cell.appendChild(value);
-      box.appendChild(cell);
-    });
-
-    var empty = box.childNodes.length === 0;
-    box.hidden = empty;
-    $("aqi-pollutant-caption").hidden = empty;
-  }
-
-  function renderAqiForecast(data) {
-    var box = $("aqi-forecast");
-    box.textContent = "";
-    var daily = data.forecast && data.forecast.daily && data.forecast.daily.pm25;
-
-    if (!daily || !daily.length) {
-      box.hidden = true;
-      return;
-    }
-
-    var todayKey = new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(new Date());
-    var rows = daily.filter(function (row) { return row.day >= todayKey; }).slice(0, 3);
-
-    if (!rows.length) {
-      box.hidden = true;
-      return;
-    }
-
-    box.hidden = false;
-
-    var title = document.createElement("p");
-    title.className = "fc-title";
-    title.textContent = "PM2.5 分指数 · 未来三天";
-    box.appendChild(title);
-
-    var labels = ["今天", "明天", "后天"];
-    var peak = Math.max.apply(null, rows.map(function (row) { return row.avg || 0; }).concat([1]));
-
-    rows.forEach(function (row, index) {
-      var line = document.createElement("div");
-      line.className = "fc-row " + aqiLevel(row.avg || 0).cls;
-
-      var name = document.createElement("span");
-      name.textContent = labels[index] || row.day.slice(5);
-
-      var bar = document.createElement("span");
-      bar.className = "fc-bar";
-      var fill = document.createElement("i");
-      fill.style.width = Math.max(4, Math.round((row.avg || 0) / peak * 100)) + "%";
-      bar.appendChild(fill);
-
-      var value = document.createElement("b");
-      value.textContent = row.avg;
-
-      line.appendChild(name);
-      line.appendChild(bar);
-      line.appendChild(value);
-      box.appendChild(line);
-    });
-  }
-
-  // ---------- 预警 ----------
 
   var SEVERITY = {
     Minor: ["蓝色", "#3b82f6"],
@@ -718,7 +594,76 @@
     }).addTo(map).bindTooltip("衢州");
 
     L.control.zoom({ position: "bottomright" }).addTo(map);
+    weatherMap = map;
     setTimeout(function () { map.invalidateSize(); }, 250);
+  }
+
+  // ---------- 板块布局 ----------
+
+  function setCols(value) {
+    var board = $("board");
+    var cols = ["1", "2", "3", "4"].indexOf(String(value)) >= 0 ? String(value) : "2";
+    board.className = "board cols-" + cols;
+    try {
+      localStorage.setItem("weather-cols", cols);
+    } catch (err) {
+      /* 隐私模式下忽略 */
+    }
+    if (weatherMap) {
+      setTimeout(function () { weatherMap.invalidateSize(); }, 200);
+    }
+  }
+
+  function initBoard() {
+    var board = $("board");
+    if (!board) return;
+
+    var cols = "2";
+    try {
+      cols = localStorage.getItem("weather-cols") || "2";
+    } catch (err) {
+      cols = "2";
+    }
+    setCols(cols);
+    $("cols").value = ["1", "2", "3", "4"].indexOf(String(cols)) >= 0 ? String(cols) : "2";
+
+    try {
+      var saved = JSON.parse(localStorage.getItem("weather-order") || "null");
+      if (Array.isArray(saved)) {
+        saved.forEach(function (id) {
+          var card = board.querySelector('.card[data-widget="' + id + '"]');
+          if (card) board.appendChild(card);
+        });
+      }
+    } catch (err) {
+      /* 数据损坏时保持默认顺序 */
+    }
+
+    $("cols").addEventListener("change", function () {
+      setCols(this.value);
+    });
+
+    if (window.Sortable) {
+      Sortable.create(board, {
+        animation: 160,
+        handle: ".drag",
+        draggable: ".card",
+        ghostClass: "is-ghost",
+        onEnd: function () {
+          var order = Array.prototype.map.call(board.children, function (card) {
+            return card.getAttribute("data-widget");
+          });
+          try {
+            localStorage.setItem("weather-order", JSON.stringify(order));
+          } catch (err) {
+            /* 忽略 */
+          }
+          if (weatherMap) {
+            setTimeout(function () { weatherMap.invalidateSize(); }, 200);
+          }
+        }
+      });
+    }
   }
 
   // ---------- 启动 ----------
@@ -729,6 +674,7 @@
     loadAll().then(function () { button.disabled = false; });
   });
 
+  initBoard();
   loadAll();
   setInterval(updateFreshness, 30 * 1000);
   setInterval(loadAll, REFRESH_MS);

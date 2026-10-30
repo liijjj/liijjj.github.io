@@ -115,26 +115,62 @@
   cursor: progress;
 }
 
-/* ---------- 布局 ---------- */
+.layout-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .78rem;
+  color: var(--fg-muted);
+}
 
-.weather-grid {
+.layout-field select {
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--fg);
+  font: inherit;
+  font-size: .78rem;
+}
+
+/* ---------- 板块网格 ---------- */
+
+.board {
   display: grid;
   grid-template-columns: 1fr;
   gap: 16px;
   padding-bottom: 4px;
 }
 
-.weather-grid > * {
+.board > * {
   min-width: 0;
 }
 
 @media (min-width: 780px) {
-  .weather-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  .board.cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
   }
 
-  .card-wide {
-    grid-column: 1 / -1;
+  .board.cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
+  }
+
+  .board.cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
+  }
+}
+
+@media (max-width: 779px) {
+  .board {
+    grid-template-columns: 1fr !important;
+    grid-auto-rows: auto !important;
+  }
+
+  .layout-field {
+    display: none;
   }
 }
 
@@ -144,15 +180,18 @@
 
 .card-head {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 14px;
 }
 
 .card-head h2 {
   font-size: 1rem;
   letter-spacing: -.01em;
+}
+
+.card-head .hint {
+  margin-left: auto;
 }
 
 .hint {
@@ -162,20 +201,45 @@
   text-align: right;
 }
 
+.drag {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: .9rem;
+  line-height: 1;
+  cursor: grab;
+  touch-action: none;
+}
+
+.drag:hover {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.drag:active {
+  cursor: grabbing;
+}
+
+.is-ghost {
+  opacity: .35;
+}
+
 /* ---------- 实况一行 ---------- */
 
 .now-line {
-  margin: 0;
+  margin: 0 0 14px;
   color: var(--fg-muted);
   font-size: .85rem;
-  line-height: 1.6;
+  line-height: 1.65;
   font-variant-numeric: tabular-nums;
-}
-
-@media (max-width: 600px) {
-  .now-extra {
-    display: none;
-  }
 }
 
 /* ---------- 图表 ---------- */
@@ -225,167 +289,26 @@
   color: var(--fg-muted);
 }
 
-/* ---------- 空气质量 ---------- */
+/* ---------- 空气质量地图 ---------- */
 
-.aqi-layout {
-  display: grid;
-  gap: 16px;
-}
-
-@media (min-width: 780px) {
-  .aqi-layout {
-    grid-template-columns: minmax(0, 1fr) minmax(260px, .85fr);
-    align-items: start;
-  }
-}
-
-.aqi-main {
-  min-width: 0;
-}
-
-.aqi-summary {
+.card[data-widget="air"] {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 6px;
+  flex-direction: column;
 }
 
-.aqi-big {
-  font-size: 2.6rem;
-  font-weight: 700;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.aqi-cat {
-  font-size: .95rem;
-  font-weight: 600;
-}
-
-.aqi-l1 { --aqi: #047857; }
-.aqi-l2 { --aqi: #a16207; }
-.aqi-l3 { --aqi: #c2410c; }
-.aqi-l4 { --aqi: #b91c1c; }
-.aqi-l5 { --aqi: #7e22ce; }
-.aqi-l6 { --aqi: #7f1d1d; }
-
-.aqi-big.aqi-l1, .aqi-big.aqi-l2, .aqi-big.aqi-l3,
-.aqi-big.aqi-l4, .aqi-big.aqi-l5, .aqi-big.aqi-l6,
-.aqi-cat.aqi-l1, .aqi-cat.aqi-l2, .aqi-cat.aqi-l3,
-.aqi-cat.aqi-l4, .aqi-cat.aqi-l5, .aqi-cat.aqi-l6 {
-  color: var(--aqi);
-}
-
-@media (prefers-color-scheme: dark) {
-  .aqi-l1 { --aqi: #34d399; }
-  .aqi-l2 { --aqi: #facc15; }
-  .aqi-l3 { --aqi: #fb923c; }
-  .aqi-l4 { --aqi: #f87171; }
-  .aqi-l5 { --aqi: #c084fc; }
-  .aqi-l6 { --aqi: #fca5a5; }
-}
-
-.pollutant-caption {
-  margin: 14px 0 6px;
-  font-size: .74rem;
-  color: var(--fg-muted);
-}
-
-.pollutants {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.pollutant {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 7px 10px;
-  min-width: 0;
-}
-
-.pollutant b {
-  display: block;
-  font-size: .7rem;
-  font-weight: 500;
-  color: var(--fg-muted);
-}
-
-.pollutant span {
-  font-size: .98rem;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-}
-
-.aqi-forecast {
-  display: grid;
-  gap: 7px;
-  margin-top: 14px;
-}
-
-.fc-title {
-  font-size: .74rem;
-  color: var(--fg-muted);
-  margin-bottom: 1px;
-}
-
-.fc-row {
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) 34px;
-  align-items: center;
-  gap: 8px;
-  font-size: .76rem;
-  color: var(--fg-muted);
-}
-
-.fc-row b {
-  text-align: right;
-  font-weight: 650;
-  color: var(--fg);
-  font-variant-numeric: tabular-nums;
-}
-
-.fc-bar {
-  height: 6px;
-  border-radius: 999px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  overflow: hidden;
-}
-
-.fc-bar i {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: var(--aqi, var(--accent));
+.card[data-widget="air"] .map {
+  flex: 1 1 auto;
 }
 
 .map {
-  height: 210px;
+  height: 220px;
+  min-height: 200px;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--bg);
   overflow: hidden;
   position: relative;
   z-index: 0;
-}
-
-.aqi-map-wrap .map {
-  height: 100%;
-  min-height: 210px;
-}
-
-@media (min-width: 780px) {
-  .aqi-map-wrap {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-  }
-
-  .aqi-map-wrap .map {
-    flex: 1 1 auto;
-  }
 }
 
 .map .leaflet-container {

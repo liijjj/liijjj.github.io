@@ -1,178 +1,93 @@
+#!/usr/bin/env python3
+"""检查今天是否有可转债申购，有就推送一次钉钉。
+
+数据来源：东方财富「新股申购 - 可转债」使用的同一个接口。
+推送时间由 workflow 的 cron 决定（北京时间 07:33），推送内容与旧版一致：
+
+    标题 / 正文：10月31日星期五的某某转债
+    正文末尾的 U 是钉钉机器人的关键词，不能删。
 """
-【需求说明】
-1. 抓取 AkShare 可转债最新数据，更新并生成网页 index.html。
-2. 检查当天（today）是否有新债申购：
-   - 若发现当天有新债申购：仅由本后端脚本触发钉钉机器人通知，及时提醒用户申购。
-   - 若当天无新债申购：跳过钉钉推送。
-"""
-import os
+
+from __future__ import annotations
+
 import json
+import os
+import sys
+import urllib.parse
 import urllib.request
-import akshare as ak
-import pandas as pd
-from datetime import datetime, timezone, timedelta
-from html import escape
+from datetime import datetime, timedelta, timezone
 
-# 1. 时区与时间初始化（使用 CST 北京时间）
 CST = timezone(timedelta(hours=8))
-now = datetime.now(CST)
-today = now.strftime('%Y-%m-%d')
-year = now.year
+API = "https://datacenter-web.eastmoney.com/api/data/v1/get"
+WEEKDAYS = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
+USER_AGENT = "liijjj-kzz/1.0 (+https://github.com/liijjj/liijjj.github.io)"
 
-print('正在获取 AkShare 可转债数据...')
-df = ak.bond_zh_cov()
-print('原始数据：', len(df))
 
-df['申购日期'] = df['申购日期'].astype(str)
-df = df[df['申购日期'].str.startswith(str(year))].copy()
-df = df.sort_values('申购日期', ascending=False)
-print(f'{year} 年数据：{len(df)} 条')
+def fetch_today(day: str) -> list[dict]:
+    params = {
+        "reportName": "RPT_BOND_CB_LIST",
+        "columns": "SECURITY_CODE,SECURITY_NAME_ABBR,CORRECODE,PUBLIC_START_DATE",
+        "filter": f"(PUBLIC_START_DATE='{day}')",
+        "pageNumber": "1",
+        "pageSize": "50",
+        "source": "WEB",
+        "client": "WEB",
+    }
+    url = f"{API}?{urllib.parse.urlencode(params)}"
+    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(request, timeout=20) as response:
+        payload = json.load(response)
 
-# 2. 生成网页首行提醒文字 (notice)
-weekdays = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
-future_df = df[df['申购日期'] >= today].copy()
-groups = []
+    # 9201 表示当天没有数据；其他错误直接抛出来，让任务变红
+    if payload.get("code") == 9201:
+        return []
+    if payload.get("code") != 0:
+        raise RuntimeError(payload.get("message") or f"接口返回 {payload.get('code')}")
 
-for date, group in future_df.groupby('申购日期', sort=True):
-    dt = datetime.strptime(date, '%Y-%m-%d')
-    date_text = f'{dt.month}月{dt.day}日{weekdays[dt.weekday()]}'
-    names_text = '、'.join(group['债券简称'].astype(str))
-    # 注意：此处包含 class="date" 供前端选择器精准匹配
-    groups.append(f'<span class="date">{date_text}的{escape(names_text)}</span>')
+    return (payload.get("result") or {}).get("data") or []
 
-if groups:
-    notice = '，'.join(groups)
-    notice = f'更新于{now.strftime("%Y-%m-%d %H:%M:%S")}:{notice}'
-else:
-    notice = f'更新于{now.strftime("%Y-%m-%d %H:%M:%S")}'
 
-# -------------------------------------------------------------
-# 3. 后端钉钉推送逻辑：仅在【申购日当天】发现新债时触发
-# -------------------------------------------------------------
-today_df = df[df['申购日期'] == today].copy()
+def push(webhook: str, title: str, text: str) -> str:
+    message = {"msgtype": "markdown", "markdown": {"title": title, "text": text}}
+    request = urllib.request.Request(
+        webhook,
+        data=json.dumps(message).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+    )
+    with urllib.request.urlopen(request, timeout=20) as response:
+        return response.read().decode("utf-8", "replace")
 
-if not today_df.empty:
-    today_names_text = '、'.join(today_df['债券简称'].astype(str))
-    dt = datetime.strptime(today, '%Y-%m-%d')
-    today_text = f'{dt.month}月{dt.day}日{weekdays[dt.weekday()]}的{today_names_text}'
-    print(f"【后端提醒】检测到今日（{today}）有可转债申购：{today_names_text}")
-    
-    # 从 GitHub Secrets / 环境变量中提取 Webhook 地址
-    webhook_url = os.environ.get('DINGTALK_WEBHOOK')
-    
-    if not webhook_url:
-        print("未检测到 DINGTALK_WEBHOOK 环境变量，跳过钉钉推送。")
-    else:
-        msg = {
-            "msgtype": "markdown",
-            "markdown": {
-                "title": today_text,
-                "text": today_text + "U"
-            }
-        }
-        try:
-            req = urllib.request.Request(
-                webhook_url,
-                data=json.dumps(msg).encode('utf-8'),
-                headers={'Content-Type': 'application/json'}
-            )
-            with urllib.request.urlopen(req) as response:
-                print("钉钉推送成功响应:", response.read().decode('utf-8'))
-        except Exception as e:
-            print("钉钉推送失败:", e)
-else:
-    print(f"今日（{today}）无新债申购，不触发后端钉钉推送。")
 
-# 4. 生成 index.html 网页文件
-headers = ''.join(f'<th>{escape(str(col))}</th>' for col in df.columns)
-rows = []
-for _, row in df.iterrows():
-    date = str(row['申购日期'])
-    future = date >= today
-    cls = 'future' if future else ''
-    cells = []
-    for value in row:
-        if pd.isna(value):
-            value = ''
-        else:
-            value = str(value)
-        cells.append(f'<td>{escape(value)}</td>')
-    rows.append(f'<tr class="{cls}">' + ''.join(cells) + '</tr>')
+def main() -> int:
+    now = datetime.now(CST)
+    today = now.strftime("%Y-%m-%d")
 
-html = f'''<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{year}年可转债</title>
-<style>
-* {{
-    box-sizing: border-box;
-}}
-body {{
-    margin: 20px;
-    font-family: Arial,"Microsoft YaHei",sans-serif;
-    background: #f5f5f5;
-}}
-h2 {{
-    margin: 0 0 8px 0;
-}}
-.info {{
-    color: #777;
-    margin-bottom: 15px;
-}}
-.notice {{
-    color: #333;
-    margin-bottom: 15px;
-    font-size: 16px;
-}}
-.notice .date {{
-    color: red;
-    font-weight: bold;
-}}
-.table-wrap {{
-    width: 100%;
-    overflow-x: auto;
-    background: white;
-}}
-table {{
-    border-collapse: collapse;
-    white-space: nowrap;
-    min-width: max-content;
-}}
-th,td {{
-    border: 1px solid #ddd;
-    padding: 7px 10px;
-    text-align: left;
-}}
-th {{
-    background: #eee;
-    position: sticky;
-    top: 0;
-}}
-tr.future {{
-    color: red;
-    font-weight: bold;
-}}
-</style>
-</head>
-<body>
-<h2>{year} 年可转债</h2>
-<div class="notice">{notice}</div>
-<div class="table-wrap">
-<table>
-<thead>
-<tr>{headers}</tr>
-</thead>
-<tbody>
-{''.join(rows)}
-</tbody>
-</table>
-</div>
-</body>
-</html>'''
+    rows = fetch_today(today)
+    if not rows:
+        print(f"今日（{today}）没有可转债申购，不推送。")
+        return 0
 
-with open('index.html', 'w', encoding='utf-8') as f:
-    f.write(html)
+    names = "、".join(
+        str(row.get("SECURITY_NAME_ABBR") or row.get("SECURITY_CODE")) for row in rows
+    )
+    day = datetime.strptime(today, "%Y-%m-%d")
+    title = f"{day.month}月{day.day}日{WEEKDAYS[day.weekday()]}的{names}"
+    print(f"检测到今日可转债申购：{names}")
 
-print('index.html 已成功生成')
+    webhook = os.environ.get("DINGTALK_WEBHOOK", "").strip()
+    if not webhook:
+        print("未配置 DINGTALK_WEBHOOK，跳过钉钉推送。")
+        return 0
+
+    try:
+        response = push(webhook, title, title + "U")
+        print("钉钉推送成功：", response)
+    except Exception as exc:  # noqa: BLE001 - 推送失败要让任务变红
+        print("钉钉推送失败：", exc, file=sys.stderr)
+        return 1
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
