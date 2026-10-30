@@ -82,6 +82,8 @@ def shell(title: str, description: str, body: str) -> str:
 <title>{escape(title)}</title>
 <meta name="description" content="{escape(description)}">
 <meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f4f6f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1120" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/site.css">
 </head>

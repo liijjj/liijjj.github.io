@@ -10,7 +10,8 @@
   var LOCATION = { lat: 28.98, lon: 118.865 };
   var TZ = "Asia/Shanghai";
   var REFRESH_MS = 5 * 60 * 1000;
-  var STALE_MINUTES = 90;
+  var WARN_MINUTES = 80;
+  var BAD_MINUTES = 180;
 
   var FILES = {
     weather: "weather_24h.json",
@@ -135,9 +136,9 @@
       return;
     }
     var age = Date.now() - updatedAt;
-    var limit = STALE_MINUTES * 60000;
-    var tone = age > limit * 3 ? "is-bad" : age > limit ? "is-warn" : "";
-    var note = tone === "is-bad" ? "，更新可能已中断" : tone === "is-warn" ? "，可能延迟" : "";
+    var tone = age > BAD_MINUTES * 60000 ? "is-bad"
+      : age > WARN_MINUTES * 60000 ? "is-warn" : "";
+    var note = tone === "is-bad" ? "，更新已中断" : tone === "is-warn" ? "，可能延迟" : "";
     box.className = "freshness " + tone;
     label.textContent = "数据 " + stamp(updatedAt) + " · " + timeAgo(updatedAt) + note;
     $("footer-updated").textContent = "数据更新时间 " + stamp(updatedAt) + "（北京时间）";

@@ -46,7 +46,7 @@
     var maxAge = (Number(node.getAttribute("data-max-age")) || 90) * 60000;
     var age = Date.now() - state.at;
     var tone = "is-ok";
-    if (age > maxAge * 3) tone = "is-bad";
+    if (age > maxAge * 2) tone = "is-bad";
     else if (age > maxAge) tone = "is-warn";
 
     node.className = "card-status " + tone;
