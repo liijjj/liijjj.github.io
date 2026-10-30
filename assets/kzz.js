@@ -117,6 +117,7 @@
   function formatCell(row, col) {
     var value = row[col.key];
     if (value === null || value === undefined || value === "" || value === "-") return "—";
+    if (col.key === "RATING") return String(value).replace(/sti$/i, "");
     if (col.type === "date") return datePart(value);
     if (col.type === "pct" || col.type === "num") {
       var n = Number(value);
