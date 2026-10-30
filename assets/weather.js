@@ -179,11 +179,15 @@
     var temp = (now && now.temp) || (first && first.temp) || "--";
     var text = (now && now.text) || (first && first.text) || "";
     var parts = [];
+    var humidity = (now && now.humidity) || (first && first.humidity);
+    var windDir = (now && now.windDir) || (first && first.windDir);
+    var windScale = (now && now.windScale) || (first && first.windScale);
+    var pressure = (now && now.pressure) || (first && first.pressure);
 
     if (now && now.feelsLike) parts.push("体感 " + now.feelsLike + "°");
-    if (now && now.humidity) parts.push("湿度 " + now.humidity + "%");
-    if (now && now.windDir) parts.push(now.windDir + " " + now.windScale + " 级");
-    if (now && now.pressure) parts.push("气压 " + now.pressure + " hPa");
+    if (humidity) parts.push("湿度 " + humidity + "%");
+    if (windDir) parts.push(windDir + " " + windScale + " 级");
+    if (pressure) parts.push("气压 " + pressure + " hPa");
     if (now && now.vis) parts.push("能见度 " + now.vis + " km");
     if (now && now.obsTime) parts.push("观测 " + clock(now.obsTime));
     if (!now) parts.push("就近小时预报");
