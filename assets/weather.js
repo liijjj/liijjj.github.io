@@ -604,6 +604,12 @@
 
   // ---------- 板块布局 ----------
 
+  function resizeWidgets() {
+    if (charts.hourly) charts.hourly.resize();
+    if (charts.minutely) charts.minutely.resize();
+    if (weatherMap) weatherMap.invalidateSize();
+  }
+
   function setCols(value) {
     var board = $("board");
     var cols = ["1", "2", "3", "4"].indexOf(String(value)) >= 0 ? String(value) : "2";
@@ -613,9 +619,7 @@
     } catch (err) {
       /* 隐私模式下忽略 */
     }
-    if (weatherMap) {
-      setTimeout(function () { weatherMap.invalidateSize(); }, 200);
-    }
+    setTimeout(resizeWidgets, 220);
   }
 
   function initBoard() {
@@ -662,9 +666,7 @@
           } catch (err) {
             /* 忽略 */
           }
-          if (weatherMap) {
-            setTimeout(function () { weatherMap.invalidateSize(); }, 200);
-          }
+          setTimeout(resizeWidgets, 220);
         }
       });
     }
