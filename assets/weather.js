@@ -201,6 +201,9 @@
     if (humidity) tail.push("湿度 " + humidity + "%");
     if (windDir) tail.push(windDir + " " + windScale + " 级");
     if (pressure) tail.push("气压 " + pressure + " hPa");
+    if (now && now.feelsLike) tail.push("体感 " + now.feelsLike + "°");
+    if (now && now.vis) tail.push("能见度 " + now.vis + " km");
+    if (now && now.obsTime) tail.push("观测 " + clock(now.obsTime));
     if (!now) tail.push("就近小时预报");
     if (tail.length) line.appendChild(document.createTextNode(" · " + tail.join(" · ")));
   }
