@@ -17,7 +17,7 @@
       "title": "可转债日历",
       "description": "可转债的申购、中签与上市信息，申购日早上推送提醒。",
       "category": "财经",
-      "cadence": "每天 07:33",
+      "cadence": "每天",
       "accent": "amber"
     }
   ]
