@@ -1,54 +1,83 @@
-name: Automated Weather Data Fetcher
+name: 天气数据
 
 on:
   schedule:
-    # 每15分钟触发一次
-    # - cron: '*/15 * * * *'
-    - cron: '7,22,37,52 * * * *'
-  workflow_dispatch: # 允许手动点击运行
+    # 每小时第 7 分钟。GitHub 的定时任务本身会被延迟，
+    # 页面会显示真实的数据时间，不再承诺"精确几分更新"。
+    - cron: '7 * * * *'
+  workflow_dispatch:
 
 permissions:
-  contents: write 
+  contents: write
+
+concurrency:
+  group: weather-data
+  cancel-in-progress: false
 
 jobs:
-  fetch-and-deploy:
+  fetch:
     runs-on: ubuntu-latest
-
+    env:
+      TZ: Asia/Shanghai
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: 下载仓库
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10' # ✅ 修正参数名
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: monitor/weather/quzhou/requirements.txt
 
-    - name: Install Dependencies
-      run: |
-        pip install requests
+      - name: 安装依赖
+        run: pip install -r monitor/weather/quzhou/requirements.txt
 
-    - name: Execute Data Fetching Script
-      env:
-        QWEATHER_KEY: ${{ secrets.QWEATHER_KEY }}
-        QWEATHER_DOMAIN: ${{ secrets.QWEATHER_DOMAIN }} # ⚠️ 确保你的 Secret 里有配置这个
-        AQICN_TOKEN: ${{ secrets.AQICN_TOKEN }}
-      run: |
-        python monitor/weather/quzhou/fetch_data.py
+      - name: 抓取天气数据
+        id: fetch
+        continue-on-error: true
+        env:
+          QWEATHER_KEY: ${{ secrets.QWEATHER_KEY }}
+          QWEATHER_DOMAIN: ${{ secrets.QWEATHER_DOMAIN }}
+        run: python monitor/weather/quzhou/fetch_data.py --out "$RUNNER_TEMP/weather"
 
-    - name: Commit and Push Updates
-      run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        
-        # 强行生成一个心跳文件，记录每一次 Actions 真正运行的时间
-        echo "Last check: $(date -d '8 hours' +'%Y-%m-%d %H:%M:%S') CST" > monitor/weather/quzhou/output/heartbeat.log
-        
-        # 把整个 monitor 目录（包括新生成的心跳日志）纳入暂存区
-        git add monitor/
-        
-        if git diff --staged --quiet; then
-          echo "数据未发生实质变化，跳过本次提交。"
-        else
-          git commit -m "🤖 同步最新气象数据 [$(date -d '8 hours' +'%Y-%m-%d %H:%M:%S') CST]"
-          git push origin main
-        fi
+      - name: 发布到 data 分支
+        if: always()
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/weather"
+          if [ ! -f "$OUT/meta.json" ]; then
+            echo "没有生成 meta.json，跳过发布"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # data 分支只保留一个提交，每次覆盖，避免仓库历史膨胀
+          if git ls-remote --exit-code --heads origin data >/dev/null 2>&1; then
+            git fetch --depth=1 origin data
+            git checkout -B data FETCH_HEAD
+          else
+            git checkout --orphan data
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+
+          mkdir -p weather/quzhou
+          cp "$OUT"/*.json weather/quzhou/
+
+          git add -A
+          if git rev-parse --verify HEAD >/dev/null 2>&1; then
+            git commit --amend --no-edit --date="$(date -R)"
+          else
+            git commit -m "气象数据快照 $(date -u +%FT%TZ)"
+          fi
+          git push --force origin data
+
+      - name: 抓取失败时标记任务失败
+        if: steps.fetch.outcome == 'failure'
+        run: |
+          echo "::error::部分天气接口抓取失败，数据已部分发布，详情见上方日志和 meta.json"
+          exit 1

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>衢州天气</title>
+<meta name="description" content="衢州实况、24 小时预报、分钟级降水、空气质量与气象预警。">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/weather.css">
+</head>
+<body>
+
+<header class="wrap page-head">
+  <div>
+    <a class="crumb" href="/">← 首页</a>
+    <h1>衢州天气</h1>
+    <p class="lede">浙江省衢州市 · 数据来自和风天气</p>
+  </div>
+  <div class="head-actions">
+    <div class="freshness" id="freshness"><span id="freshness-text">正在载入数据…</span></div>
+    <button class="refresh" id="refresh" type="button">刷新</button>
+  </div>
+</header>
+
+<main class="wrap weather-grid">
+
+  <section class="card hero" aria-labelledby="hero-title">
+    <h2 id="hero-title" class="sr-only">当前实况</h2>
+    <div class="hero-main">
+      <div class="hero-temp">
+        <span class="hero-icon" id="now-icon" aria-hidden="true"></span>
+        <span id="now-temp">--</span><span class="unit">°</span>
+      </div>
+      <div class="hero-desc">
+        <div class="hero-text" id="now-text">正在载入</div>
+        <div class="muted small" id="now-sub">—</div>
+      </div>
+    </div>
+    <dl class="hero-metrics">
+      <div><dt>湿度</dt><dd id="now-humidity">—</dd></div>
+      <div><dt>风</dt><dd id="now-wind">—</dd></div>
+      <div><dt>气压</dt><dd id="now-pressure">—</dd></div>
+      <div><dt>能见度</dt><dd id="now-vis">—</dd></div>
+    </dl>
+    <div class="hero-aqi">
+      <div class="aqi-pill" id="aqi-pill"><span id="aqi-now">—</span></div>
+      <div>
+        <div class="k">空气质量</div>
+        <div class="aqi-cat" id="aqi-now-cat">—</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card card-wide" aria-labelledby="h24">
+    <div class="card-head">
+      <h2 id="h24">未来 24 小时</h2>
+      <span class="hint" id="h24-hint"></span>
+    </div>
+    <div class="chart-box"><canvas id="chart-24h" role="img" aria-label="未来 24 小时气温与降水趋势"></canvas></div>
+    <div class="chips" id="highlights"></div>
+  </section>
+
+  <section class="card" aria-labelledby="hmin">
+    <div class="card-head">
+      <h2 id="hmin">分钟级降水</h2>
+      <span class="hint" id="minutely-time"></span>
+    </div>
+    <p class="minutely-summary" id="minutely-summary">正在载入…</p>
+    <div class="chart-box chart-box-sm" id="minutely-chart-wrap" hidden>
+      <canvas id="chart-minutely" role="img" aria-label="未来两小时降水强度"></canvas>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="hai">
+    <div class="card-head">
+      <h2 id="hai">空气质量</h2>
+      <span class="hint" id="aqi-hint"></span>
+    </div>
+    <div class="aqi-summary">
+      <div class="aqi-big" id="aqi-big">—</div>
+      <div>
+        <div class="aqi-cat" id="aqi-cat">—</div>
+        <div class="muted small" id="aqi-primary">—</div>
+      </div>
+    </div>
+    <div class="chart-box chart-box-xs" id="aqi-chart-wrap">
+      <canvas id="chart-aqi" role="img" aria-label="逐小时空气质量指数"></canvas>
+    </div>
+    <div class="map" id="aqi-map" aria-label="空气质量地图"></div>
+    <p class="source">AQI 瓦片 © aqicn.org · 地图 © OpenStreetMap</p>
+  </section>
+
+  <section class="card card-wide" aria-labelledby="halert">
+    <div class="card-head">
+      <h2 id="halert">气象预警</h2>
+      <span class="hint" id="alert-hint"></span>
+    </div>
+    <div class="alerts" id="alerts"><p class="empty">正在载入…</p></div>
+  </section>
+
+</main>
+
+<footer class="site-footer wrap">
+  <span id="footer-updated">数据载入中…</span>
+  <span>计划每小时第 7 分钟更新 · <a href="/">返回首页</a></span>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js" integrity="sha512-Y51n9mtKTVBh3Jbx5pZSJNDDMyY+yGe77DGtBPzRlgsf/YLCh13kSZ3JmfHGzYFCmOndraf0sQgfM654b7dJ3w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="/assets/weather.js"></script>
+</body>
+</html>

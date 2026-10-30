@@ -1,42 +1,62 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Liijjj</title>
-
-<style>
-body {
-    margin: 30px;
-    font-family: Arial, "Microsoft YaHei", sans-serif;
-}
-
-h1 {
-    margin-bottom: 20px;
-}
-
-li {
-    margin: 10px 0;
-}
-
-a {
-    text-decoration: none;
-}
-</style>
-
+<meta name="description" content="自己写的一些小工具和看板，数据由 GitHub Actions 定时更新。">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/site.css">
 </head>
-
 <body>
+<header class="site-header wrap">
+  <div>
+    <p class="eyebrow">个人看板</p>
+    <h1>Liijjj</h1>
+    <p class="lede">自己写的一些小工具和看板，数据由 GitHub Actions 定时更新。</p>
+  </div>
+</header>
 
-<h1>我的项目</h1>
+<main class="wrap">
+  <ul class="card-grid">
+      <li class="card-link">
+        <a class="card" href="/monitor/weather/quzhou/">
+          <div class="card-top">
+            <span class="chip chip--sky">天气</span>
+            <span class="card-status" data-status="https://raw.githubusercontent.com/liijjj/liijjj.github.io/data/weather/quzhou/weather_24h.json" data-field="updateTime">更新状态加载中</span>
+          </div>
+          <h2>衢州天气</h2>
+          <p class="card-desc">实况、24 小时预报、分钟级降水、空气质量与气象预警。</p>
+          <div class="card-foot">
+            <span class="cadence">每小时</span>
+            <span class="go">打开 →</span>
+          </div>
+        </a>
+      </li>
+      <li class="card-link">
+        <a class="card" href="/monitor/finance/cn/kzz/">
+          <div class="card-top">
+            <span class="chip chip--amber">财经</span>
+            
+          </div>
+          <h2>可转债日历</h2>
+          <p class="card-desc">可转债的申购、中签与上市信息，申购日早上推送提醒。</p>
+          <div class="card-foot">
+            <span class="cadence">每天 07:33</span>
+            <span class="go">打开 →</span>
+          </div>
+        </a>
+      </li>
+  </ul>
+</main>
 
-<ul>
-<li><a href="/monitor/finance/cn/kzz/index.html">/monitor/finance/cn/kzz/index.html</a></li>
-<li><a href="/monitor/weather/quzhou/index.htm">/monitor/weather/quzhou/index.htm</a></li>
-</ul>
+<footer class="site-footer wrap">
+  <span>共 2 个页面 · 数据由 GitHub Actions 定时更新</span>
+  <a href="https://github.com/liijjj/liijjj.github.io" rel="noopener">源码</a>
+</footer>
+
+<script src="/assets/portal.js" defer></script>
 
 </body>
-
 </html>

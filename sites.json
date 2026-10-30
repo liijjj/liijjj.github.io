@@ -1,0 +1,24 @@
+{
+  "title": "Liijjj",
+  "description": "自己写的一些小工具和看板，数据由 GitHub Actions 定时更新。",
+  "pages": [
+    {
+      "path": "monitor/weather/quzhou/",
+      "title": "衢州天气",
+      "description": "实况、24 小时预报、分钟级降水、空气质量与气象预警。",
+      "category": "天气",
+      "cadence": "每小时",
+      "status": "https://raw.githubusercontent.com/liijjj/liijjj.github.io/data/weather/quzhou/weather_24h.json",
+      "updatedField": "updateTime",
+      "accent": "sky"
+    },
+    {
+      "path": "monitor/finance/cn/kzz/",
+      "title": "可转债日历",
+      "description": "可转债的申购、中签与上市信息，申购日早上推送提醒。",
+      "category": "财经",
+      "cadence": "每天 07:33",
+      "accent": "amber"
+    }
+  ]
+}

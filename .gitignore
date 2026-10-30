@@ -1,0 +1,9 @@
+# 本地预览时由 fetch_data.py 生成的天气数据（线上数据在 data 分支）
+monitor/weather/quzhou/output/
+
+# 编辑器 / 系统文件
+.openchamber/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
