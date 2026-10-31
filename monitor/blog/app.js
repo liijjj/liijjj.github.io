@@ -6,6 +6,11 @@
   var DATA_URL = "./posts.json";
   var DEFAULT_SIZE = 50;
 
+  var STATE_API = "https://api.github.com/repos/liijjj/liijjj.github.io/contents/monitor/blog/read.json";
+  var STATE_RAW = "https://raw.githubusercontent.com/liijjj/liijjj.github.io/state/monitor/blog/read.json";
+  var TOKEN_KEY = "blog-sync-token";
+  var SYNC_DELAY = 4000;
+
   var state = {
     posts: [],
     filtered: [],
@@ -17,14 +22,167 @@
   // 点击过的文章（预览过），用来模拟 :visited 的颜色
   var read = {};
 
-  function markRead(url) {
-    if (!url) return;
-    read[url] = 1;
+  function saveRead() {
     try {
       localStorage.setItem("blog-read", JSON.stringify(read));
     } catch (err) {
       /* 忽略 */
     }
+  }
+
+  function mergeRead(source) {
+    var changed = false;
+    Object.keys(source || {}).forEach(function (url) {
+      if (!read[url]) {
+        read[url] = 1;
+        changed = true;
+      }
+    });
+    if (changed) saveRead();
+  }
+
+  function markRead(url) {
+    if (!url) return;
+    read[url] = 1;
+    saveRead();
+  }
+
+  // ---------- 跨设备同步 ----------
+
+  var syncing = false;
+  var syncTimer = null;
+
+  function getToken() {
+    try {
+      return localStorage.getItem(TOKEN_KEY) || "";
+    } catch (err) {
+      return "";
+    }
+  }
+
+  function setToken(value) {
+    try {
+      if (value) localStorage.setItem(TOKEN_KEY, value);
+      else localStorage.removeItem(TOKEN_KEY);
+    } catch (err) {
+      /* 忽略 */
+    }
+  }
+
+  function base64(text) {
+    return btoa(unescape(encodeURIComponent(text)));
+  }
+
+  function setSyncStatus(text) {
+    if (els.syncStatus) els.syncStatus.textContent = text;
+  }
+
+  function loadSharedRead() {
+    return fetch(STATE_RAW + "?_=" + Date.now(), { cache: "no-store" })
+      .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        if (data && data.read) {
+          mergeRead(data.read);
+          if (state.posts.length) render();
+        }
+      })
+      .catch(function () {
+        /* 没有共享记录时忽略 */
+      });
+  }
+
+  function syncNow() {
+    var token = getToken();
+    if (!token) {
+      setSyncStatus("请先填写 PAT");
+      return;
+    }
+    if (syncing) return;
+    syncing = true;
+    setSyncStatus("同步中…");
+
+    var headers = {
+      Authorization: "Bearer " + token,
+      Accept: "application/vnd.github+json"
+    };
+
+    function readRemote() {
+      return fetch(STATE_API + "?ref=state&_=" + Date.now(), {
+        headers: headers,
+        cache: "no-store"
+      }).then(function (res) {
+        if (res.status === 404) return { sha: null, read: {} };
+        if (!res.ok) throw new Error("读取失败 HTTP " + res.status);
+        return res.json().then(function (data) {
+          var parsed = {};
+          try {
+            var text = decodeURIComponent(escape(atob((data.content || "").replace(/\s/g, ""))));
+            parsed = JSON.parse(text);
+          } catch (err) {
+            parsed = {};
+          }
+          return { sha: data.sha, read: parsed.read || {} };
+        });
+      });
+    }
+
+    function writeRemote(sha, merged, attempt) {
+      var body = {
+        message: "chore: 同步已读记录",
+        content: base64(JSON.stringify({ read: merged })),
+        branch: "state"
+      };
+      if (sha) body.sha = sha;
+
+      return fetch(STATE_API, {
+        method: "PUT",
+        headers: Object.assign({ "Content-Type": "application/json" }, headers),
+        body: JSON.stringify(body)
+      }).then(function (res) {
+        if (res.status === 409 && attempt < 1) {
+          return readRemote().then(function (fresh) {
+            var mergedAgain = {};
+            Object.keys(fresh.read).forEach(function (url) { mergedAgain[url] = 1; });
+            Object.keys(read).forEach(function (url) { mergedAgain[url] = 1; });
+            read = mergedAgain;
+            saveRead();
+            return writeRemote(fresh.sha, mergedAgain, attempt + 1);
+          });
+        }
+        if (!res.ok) throw new Error("写入失败 HTTP " + res.status);
+        return true;
+      });
+    }
+
+    readRemote()
+      .then(function (remote) {
+        var merged = {};
+        Object.keys(remote.read).forEach(function (url) { merged[url] = 1; });
+        Object.keys(read).forEach(function (url) { merged[url] = 1; });
+        read = merged;
+        saveRead();
+        return writeRemote(remote.sha, merged, 0);
+      })
+      .then(function () {
+        syncing = false;
+        setSyncStatus("已同步 " + new Date().toLocaleTimeString("zh-CN", { hour12: false }));
+        if (state.posts.length) render();
+      })
+      .catch(function (err) {
+        syncing = false;
+        console.warn("[博客] 同步失败", err);
+        setSyncStatus("同步失败：" + err.message);
+      });
+  }
+
+  function queueSync() {
+    if (!getToken()) return;
+    setSyncStatus("待同步…");
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(syncNow, SYNC_DELAY);
   }
 
   var els = {
@@ -45,7 +203,12 @@
     pane: document.getElementById("pane"),
     paneFrame: document.getElementById("pane-frame"),
     paneTitle: document.getElementById("pane-title"),
-    paneClose: document.getElementById("pane-close")
+    paneClose: document.getElementById("pane-close"),
+    syncBox: document.getElementById("sync-box"),
+    syncToken: document.getElementById("sync-token"),
+    syncSave: document.getElementById("sync-save"),
+    syncClear: document.getElementById("sync-clear"),
+    syncStatus: document.getElementById("sync-status")
   };
 
   function setPane(open) {
@@ -157,6 +320,40 @@
       read = {};
     }
 
+    els.syncBox.open = false;
+    if (getToken()) els.syncToken.placeholder = "已保存，留空沿用";
+
+    els.syncSave.addEventListener("click", function () {
+      var value = els.syncToken.value.trim();
+      if (value) {
+        setToken(value);
+        els.syncToken.value = "";
+        els.syncToken.placeholder = "已保存，留空沿用";
+      }
+      if (!getToken()) {
+        setSyncStatus("请先填写 PAT");
+        return;
+      }
+      syncNow();
+    });
+
+    els.syncClear.addEventListener("click", function () {
+      setToken("");
+      els.syncToken.value = "";
+      els.syncToken.placeholder = "github_pat_...";
+      setSyncStatus("已清除本机 PAT");
+    });
+
+    loadSharedRead();
+
+    window.addEventListener("pagehide", function () {
+      if (syncTimer) {
+        clearTimeout(syncTimer);
+        syncTimer = null;
+        syncNow();
+      }
+    });
+
     var params = new URLSearchParams(location.search);
     var page = parseInt(params.get("page"), 10);
     state.query = params.get("q") || "";
@@ -222,6 +419,7 @@
       event.preventDefault();
       markRead(link.href);
       link.classList.add("is-read");
+      queueSync();
       openPost(link.href, title ? title.textContent : link.href);
     });
 
