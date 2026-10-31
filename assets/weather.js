@@ -315,15 +315,17 @@
             padding: 10,
             cornerRadius: 8,
             displayColors: false,
+            // 气温和降水两组数据共用一个 tooltip，只保留气温那一组，
+            // 否则同样的明细会出现两次，末尾还会多一行「降水 0」。
+            filter: function (item) {
+              return item.datasetIndex === 0;
+            },
             callbacks: {
               title: function (items) {
                 var h = hoursCache[items[0].dataIndex];
                 return h ? stamp(h.fxTime) : "";
               },
               label: function (item) {
-                // 气温和降水两组数据共用同一个 tooltip，只在第一组输出明细，
-                // 否则同样的四行会出现两次。
-                if (item.datasetIndex !== 0) return undefined;
                 var h = hoursCache[item.dataIndex];
                 if (!h) return undefined;
                 return [
