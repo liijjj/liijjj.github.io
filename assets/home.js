@@ -6,6 +6,7 @@
   var DATA_BASE = "https://raw.githubusercontent.com/liijjj/liijjj.github.io/data/weather/quzhou/";
   var KZZ_API = "https://datacenter-web.eastmoney.com/api/data/v1/get";
   var TZ = "Asia/Shanghai";
+  var BASE_TITLE = document.title;
 
   var AQI_LEVELS = [
     { max: 50, cls: "aqi-c1" },
@@ -71,6 +72,10 @@
       var now = result[1] && result[1].now;
       var aqi = result[2] && result[2].status === "ok" ? result[2].data : null;
       var first = weather && weather.hourly && weather.hourly[0];
+
+      if (aqi) {
+        document.title = BASE_TITLE + " " + aqi.aqi;
+      }
 
       if (!now && !first) return;
 

@@ -82,7 +82,7 @@ def build_home(site: dict) -> str:
   </ol>
 </main>
 
-<script src="/assets/home.js" defer></script>
+<script src="/assets/home.js?v=2" defer></script>
 """
     return shell(tab_title, site.get("description", ""), body)
 
