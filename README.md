@@ -26,7 +26,7 @@ assets/
   home.js                   首页链接后面的实况 / 新债信息
   weather.css weather.js    天气页
   blog.css                  阮一峰博客索引页
-  favicon.svg
+  icon.jpg                  站点图标
 monitor/weather/quzhou/     天气页 + 抓取脚本 + requirements.txt
 monitor/finance/cn/kzz/     可转债页（iframe）+ 钉钉提醒脚本
 monitor/blog/               博客索引页 + 抓取脚本 + posts.json
@@ -77,16 +77,6 @@ weather/quzhou/meta.json          本次抓取时间、各接口成功/失败
 
 如果新页面需要定时抓数据，复制 `fetch_weather.yml` 改一下脚本名和输出目录即可；
 抓取脚本请把数据写到 `$RUNNER_TEMP` 再发布到 `data` 分支，不要提交到 main。
-
-## 博客已读状态同步
-
-已读状态默认存在浏览器 localStorage 里，每台设备各一份。要让手机沿用电脑的记录：
-
-1. 创建一个 fine-grained PAT：只选 `liijjj/liijjj.github.io` 仓库，权限只给 **Contents: Read and write**。
-2. 在电脑上打开博客页，点「同步」，粘贴 PAT，点「保存并同步」。
-3. 之后电脑上点开文章会合并写回 `state` 分支的 `monitor/blog/read.json`；手机打开页面会自动读取这份记录上色，不需要 PAT。
-
-`state` 分支只放这一个文件，不会触发 Pages 构建。PAT 只保存在电脑浏览器的 localStorage 里，不会提交到仓库。
 
 ## 本地预览
 
