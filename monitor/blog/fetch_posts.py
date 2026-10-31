@@ -38,6 +38,11 @@ ITEM_RE = re.compile(
     r'<li class="module-list-item">(\d{4})\.(\d{2})\.(\d{2})：\s*'
     r'<a href="([^"]+)">([\s\S]*?)</a>'
 )
+# 月份归档页顶部会把当月最新一篇完整展示在列表之外，必须单独抓
+FEATURED_RE = re.compile(
+    r'<h2 class="asset-name entry-title"><a href="([^"]+)" rel="bookmark">'
+    r'([\s\S]*?)</a></h2>[\s\S]*?<abbr class="published" title="(\d{4}-\d{2}-\d{2})'
+)
 TAG_RE = re.compile(r"<[^>]+>")
 
 
@@ -83,6 +88,14 @@ def fetch_month(year: int, month: int) -> list[dict]:
                 if href.startswith("/"):
                     href = "https://www.ruanyifeng.com" + href
                 posts.append({"date": f"{y}-{m}-{d}", "title": title, "url": href})
+            for match in FEATURED_RE.finditer(html_text):
+                href, raw_title, day = match.groups()
+                title = html.unescape(TAG_RE.sub("", raw_title)).strip()
+                if not title:
+                    continue
+                if href.startswith("/"):
+                    href = "https://www.ruanyifeng.com" + href
+                posts.append({"date": day, "title": title, "url": href})
             print(f"[ok] {year}-{month:02d}: {len(posts)}", flush=True)
             time.sleep(REQUEST_DELAY)
             return posts

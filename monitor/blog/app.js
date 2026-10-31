@@ -1,4 +1,4 @@
-/* 阮一峰博客索引：分页、按年份筛选、标题搜索 */
+/* 阮一峰博客索引：分页与标题搜索 */
 
 (function () {
   "use strict";
@@ -11,13 +11,11 @@
     filtered: [],
     page: 1,
     size: DEFAULT_SIZE,
-    year: "",
     query: ""
   };
 
   var els = {
     count: document.getElementById("count"),
-    years: document.getElementById("years"),
     search: document.getElementById("search"),
     size: document.getElementById("size"),
     list: document.getElementById("list"),
@@ -43,7 +41,6 @@
   function syncUrl() {
     var params = new URLSearchParams();
     if (state.page > 1) params.set("page", state.page);
-    if (state.year) params.set("year", state.year);
     if (state.query) params.set("q", state.query);
     var query = params.toString();
     try {
@@ -54,38 +51,9 @@
   }
 
   function applyFilter() {
-    var year = state.year;
     var query = state.query.toLowerCase();
-
     state.filtered = state.posts.filter(function (post) {
-      if (year && post.date.slice(0, 4) !== year) return false;
-      if (query && post.title.toLowerCase().indexOf(query) === -1) return false;
-      return true;
-    });
-  }
-
-  function renderYears() {
-    var years = [];
-    state.posts.forEach(function (post) {
-      var year = post.date.slice(0, 4);
-      if (years.indexOf(year) === -1) years.push(year);
-    });
-    years.sort().reverse();
-
-    els.years.textContent = "";
-    ["", ...years].forEach(function (year) {
-      var button = document.createElement("button");
-      button.type = "button";
-      button.textContent = year || "全部";
-      button.setAttribute("aria-pressed", state.year === year ? "true" : "false");
-      button.addEventListener("click", function () {
-        state.year = year;
-        state.page = 1;
-        renderYears();
-        render();
-        scrollToList();
-      });
-      els.years.appendChild(button);
+      return !query || post.title.toLowerCase().indexOf(query) !== -1;
     });
   }
 
@@ -138,10 +106,6 @@
     if (target === state.page) return;
     state.page = target;
     render();
-    scrollToList();
-  }
-
-  function scrollToList() {
     if (window.scrollY > 200) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -150,8 +114,9 @@
   function init() {
     var params = new URLSearchParams(location.search);
     var page = parseInt(params.get("page"), 10);
-    var year = params.get("year") || "";
-    var query = params.get("q") || "";
+    state.query = params.get("q") || "";
+    state.page = isFinite(page) && page > 0 ? page : 1;
+    els.search.value = state.query;
 
     try {
       var saved = parseInt(localStorage.getItem("blog-size"), 10);
@@ -162,11 +127,6 @@
     } catch (err) {
       /* 忽略 */
     }
-
-    state.year = year;
-    state.query = query;
-    state.page = isFinite(page) && page > 0 ? page : 1;
-    els.search.value = query;
 
     els.search.addEventListener("input", function () {
       state.query = this.value.trim();
@@ -213,7 +173,6 @@
         els.count.textContent =
           "共 " + state.posts.length.toLocaleString("zh-CN") + " 篇" +
           (latest ? " · 最近 " + latest : "");
-        renderYears();
         render();
       })
       .catch(function (err) {

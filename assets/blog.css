@@ -1,42 +1,25 @@
-/* 博客索引页：只保留必要的排列和颜色 */
-
-.page-head {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: baseline;
-}
+/* 博客索引页：标题居中，只保留必要的排列和颜色 */
 
 .crumb {
+  display: block;
+  text-align: left;
   color: var(--fg-muted);
 }
 
-.head-row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: baseline;
+.page-head {
+  text-align: center;
 }
 
 .blog-count {
+  display: block;
   color: var(--fg-muted);
 }
 
 .blog-toolbar {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
+  justify-content: center;
   align-items: baseline;
-}
-
-.years {
-  display: flex;
-  flex-wrap: wrap;
-}
-
-.years button[aria-pressed="true"] {
-  background: var(--accent);
-  color: #ffffff;
 }
 
 .post-date {
