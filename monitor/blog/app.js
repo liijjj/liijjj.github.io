@@ -33,24 +33,12 @@
     paneFrame: document.getElementById("pane-frame"),
     paneTitle: document.getElementById("pane-title"),
     paneOriginal: document.getElementById("pane-original"),
-    paneClose: document.getElementById("pane-close"),
-    paneToggle: document.getElementById("pane-toggle")
+    paneClose: document.getElementById("pane-close")
   };
 
-  var paneOpen = false;
-
-  function setPane(open, persist) {
-    paneOpen = open;
+  function setPane(open) {
     els.reader.classList.toggle("with-pane", open);
     els.pane.hidden = !open;
-    els.paneToggle.textContent = open ? "关闭预览" : "打开预览";
-    if (persist) {
-      try {
-        localStorage.setItem("blog-pane", open ? "1" : "0");
-      } catch (err) {
-        /* 忽略 */
-      }
-    }
     if (!open) {
       els.paneFrame.hidden = true;
       els.paneFrame.src = "about:blank";
@@ -67,7 +55,7 @@
     if (els.paneFrame.src !== url) {
       els.paneFrame.src = url;
     }
-    setPane(true, true);
+    setPane(true);
   }
 
   function pages() {
@@ -202,12 +190,8 @@
       }
     });
 
-    els.paneToggle.addEventListener("click", function () {
-      setPane(!paneOpen, true);
-    });
-
     els.paneClose.addEventListener("click", function () {
-      setPane(false, true);
+      setPane(false);
     });
 
     els.list.addEventListener("click", function (event) {
@@ -222,25 +206,8 @@
       openPost(link.href, title ? title.textContent : link.href);
     });
 
-    var savedPane = null;
-    try {
-      savedPane = localStorage.getItem("blog-pane");
-    } catch (err) {
-      savedPane = null;
-    }
-    setPane(
-      savedPane === null ? window.innerWidth > 900 : savedPane === "1",
-      false
-    );
-
-    if (window.matchMedia) {
-      var narrow = window.matchMedia("(max-width: 900px)");
-      var onChange = function (event) {
-        if (event.matches && paneOpen) setPane(false, false);
-      };
-      if (narrow.addEventListener) narrow.addEventListener("change", onChange);
-      else if (narrow.addListener) narrow.addListener(onChange);
-    }
+    // 没点链接时不显示右侧窗口
+    setPane(false);
 
     fetch(DATA_URL, { cache: "no-cache" })
       .then(function (res) {

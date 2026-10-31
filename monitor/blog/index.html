@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/site.css?v=3">
-<link rel="stylesheet" href="/assets/blog.css?v=5">
+<link rel="stylesheet" href="/assets/blog.css?v=6">
 </head>
 <body>
 
@@ -31,7 +31,6 @@
         <option value="200">200</option>
       </select>
     </label>
-    <button id="pane-toggle" type="button">打开预览</button>
   </div>
 
   <div class="reader" id="reader">
@@ -56,13 +55,13 @@
       <div class="pane-head">
         <span id="pane-title">点击左侧标题预览</span>
         <a id="pane-original" href="#" target="_blank" rel="noopener" hidden>原文 ↗</a>
-        <button id="pane-close" type="button">关闭</button>
+        <button id="pane-close" type="button" aria-label="关闭预览">×</button>
       </div>
       <iframe id="pane-frame" title="博客内容预览" src="about:blank"></iframe>
     </aside>
   </div>
 </main>
 
-<script src="./app.js?v=4"></script>
+<script src="./app.js?v=5"></script>
 </body>
 </html>

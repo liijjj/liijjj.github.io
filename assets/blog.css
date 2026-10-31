@@ -28,7 +28,7 @@
 }
 
 .reader.with-pane {
-  grid-template-columns: 1.4fr 1fr;
+  grid-template-columns: 1fr 1fr;
 }
 
 .reader-main {
