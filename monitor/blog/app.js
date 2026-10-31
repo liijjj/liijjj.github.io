@@ -14,6 +14,19 @@
     query: ""
   };
 
+  // 点击过的文章（预览过），用来模拟 :visited 的颜色
+  var read = {};
+
+  function markRead(url) {
+    if (!url) return;
+    read[url] = 1;
+    try {
+      localStorage.setItem("blog-read", JSON.stringify(read));
+    } catch (err) {
+      /* 忽略 */
+    }
+  }
+
   var els = {
     count: document.getElementById("count"),
     search: document.getElementById("search"),
@@ -101,6 +114,7 @@
       link.href = post.url;
       link.target = "_blank";
       link.rel = "noopener";
+      if (read[post.url]) link.classList.add("is-read");
 
       var date = document.createElement("span");
       date.className = "post-date";
@@ -140,6 +154,13 @@
   }
 
   function init() {
+    try {
+      var savedRead = JSON.parse(localStorage.getItem("blog-read") || "{}");
+      if (savedRead && typeof savedRead === "object") read = savedRead;
+    } catch (err) {
+      read = {};
+    }
+
     var params = new URLSearchParams(location.search);
     var page = parseInt(params.get("page"), 10);
     state.query = params.get("q") || "";
@@ -203,6 +224,8 @@
       }
       var title = link.querySelector(".post-title");
       event.preventDefault();
+      markRead(link.href);
+      link.classList.add("is-read");
       openPost(link.href, title ? title.textContent : link.href);
     });
 
