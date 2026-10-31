@@ -115,6 +115,9 @@
         cache: "no-store"
       }).then(function (res) {
         if (res.status === 404) return { sha: null, read: {} };
+        if (res.status === 401 || res.status === 403) {
+          throw new Error("PAT 无效，或没有 Contents 读写权限");
+        }
         if (!res.ok) throw new Error("读取失败 HTTP " + res.status);
         return res.json().then(function (data) {
           var parsed = {};
@@ -151,6 +154,9 @@
             saveRead();
             return writeRemote(fresh.sha, mergedAgain, attempt + 1);
           });
+        }
+        if (res.status === 401 || res.status === 403) {
+          throw new Error("PAT 无效，或没有 Contents 读写权限");
         }
         if (!res.ok) throw new Error("写入失败 HTTP " + res.status);
         return true;
