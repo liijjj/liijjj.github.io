@@ -45,7 +45,6 @@
     pane: document.getElementById("pane"),
     paneFrame: document.getElementById("pane-frame"),
     paneTitle: document.getElementById("pane-title"),
-    paneOriginal: document.getElementById("pane-original"),
     paneClose: document.getElementById("pane-close")
   };
 
@@ -56,14 +55,11 @@
       els.paneFrame.hidden = true;
       els.paneFrame.src = "about:blank";
       els.paneTitle.textContent = "点击左侧标题预览";
-      els.paneOriginal.hidden = true;
     }
   }
 
   function openPost(url, title) {
     els.paneTitle.textContent = title;
-    els.paneOriginal.href = url;
-    els.paneOriginal.hidden = false;
     els.paneFrame.hidden = false;
     if (els.paneFrame.src !== url) {
       els.paneFrame.src = url;

@@ -48,6 +48,21 @@
   display: none;
 }
 
+.pane-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+#pane-title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#pane-close {
+  flex: none;
+}
+
 #pane-frame {
   width: 100%;
   flex: 1 1 auto;
