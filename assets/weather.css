@@ -64,6 +64,10 @@
   min-width: 0;
 }
 
+.card {
+  border: 1px solid var(--border);
+}
+
 .card-head {
   display: flex;
   flex-wrap: wrap;
