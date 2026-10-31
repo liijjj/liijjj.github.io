@@ -1,5 +1,6 @@
 {
   "title": "liijjj.github.io",
+  "tabTitle": "Valar Morghulis",
   "description": "自己写的一些小工具和看板，数据由 GitHub Actions 定时更新。",
   "pages": [
     {

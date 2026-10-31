@@ -73,8 +73,10 @@ def shell(title: str, description: str, body: str) -> str:
 def build_home(site: dict) -> str:
     pages = site.get("pages") or []
     links = "\n".join(link_item(p) for p in pages)
+    title = site.get("title", "Liijjj")
+    tab_title = site.get("tabTitle") or title
     body = f"""<main class="wrap home">
-  <h1>{escape(site.get("title", "Liijjj"))}</h1>
+  <h1>{escape(title)}</h1>
   <ol class="links">
 {links}
   </ol>
@@ -82,7 +84,7 @@ def build_home(site: dict) -> str:
 
 <script src="/assets/home.js" defer></script>
 """
-    return shell(site.get("title", "Liijjj"), site.get("description", ""), body)
+    return shell(tab_title, site.get("description", ""), body)
 
 
 def build_404(site: dict) -> str:
