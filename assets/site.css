@@ -103,13 +103,48 @@ h1, h2, h3, p {
   gap: 10px;
 }
 
-.links a {
-  color: var(--fg-muted);
-  font-size: .92rem;
+.links li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.links a:hover {
+.page-name {
+  color: var(--fg);
+  font-size: .95rem;
+}
+
+.page-name:hover {
   color: var(--accent);
+}
+
+.page-meta {
+  color: var(--fg-muted);
+  font-size: .82rem;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+
+/* AQI 数字：颜色跟 WAQI 等级一致，天气页和首页共用 */
+.aqi-value {
+  font-weight: 650;
+}
+
+.aqi-c1 { color: #1a7f37; }
+.aqi-c2 { color: #9a6700; }
+.aqi-c3 { color: #bc4c00; }
+.aqi-c4 { color: #cf222e; }
+.aqi-c5 { color: #8250df; }
+.aqi-c6 { color: #6e2b1f; }
+
+@media (prefers-color-scheme: dark) {
+  .aqi-c1 { color: #3fb950; }
+  .aqi-c2 { color: #d29922; }
+  .aqi-c3 { color: #f0883e; }
+  .aqi-c4 { color: #f85149; }
+  .aqi-c5 { color: #a371f7; }
+  .aqi-c6 { color: #ff7b72; }
 }
 
 /* ---------- 卡片基础（天气页用） ---------- */

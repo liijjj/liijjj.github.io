@@ -22,6 +22,7 @@ build.py                    生成首页与 404（读 sites.json）
 sites.json                  页面清单：标题、描述、分类、更新频率
 assets/
   site.css                  全站共享样式（浅色/深色）
+  home.js                   首页链接后面的实况 / 新债信息
   weather.css weather.js    天气页
   favicon.svg
 monitor/weather/quzhou/     天气页 + 抓取脚本 + requirements.txt
@@ -101,7 +102,7 @@ python -m http.server 8000
 ## 技术说明
 
 - 纯静态页面，没有构建工具、没有框架。
-- 首页是标题 + 两行链接，内容铺满整个宽度，不再居中收窄。
+- 首页是标题 + 两行链接，链接后面会自动补上当前天气和新债日历，内容铺满整个宽度。
 - 配色使用 GitHub Primer 的浅色 / 深色变量。
 - Chart.js 4.5.0、Leaflet 1.9.4 走 cdnjs，锁定版本并带 SRI 校验。
 - `.nojekyll` 让 GitHub Pages 跳过 Jekyll 处理。

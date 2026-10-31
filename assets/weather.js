@@ -132,7 +132,6 @@
     if (!updatedAt) {
       box.className = "freshness is-bad";
       label.textContent = "没有取到数据";
-      $("footer-updated").textContent = "数据暂不可用";
       return;
     }
     var age = Date.now() - updatedAt;
@@ -141,7 +140,6 @@
     var note = tone === "is-bad" ? "，更新已中断" : tone === "is-warn" ? "，可能延迟" : "";
     box.className = "freshness " + tone;
     label.textContent = "数据 " + stamp(updatedAt) + " · " + timeAgo(updatedAt) + note;
-    $("footer-updated").textContent = "数据更新时间 " + stamp(updatedAt) + "（北京时间）";
   }
 
   // ---------- 渲染入口 ----------
@@ -213,12 +211,10 @@
   function renderHourly() {
     var data = state.weather;
     if (!data || !data.hourly || !data.hourly.length) {
-      $("h24-hint").textContent = "数据不可用";
       return;
     }
     var hours = data.hourly;
     hoursCache = hours;
-    $("h24-hint").textContent = "生成于 " + clock(data.updateTime);
 
     var temps = hours.map(function (h) { return parseFloat(h.temp); });
     var precips = hours.map(function (h) { return parseFloat(h.precip || "0"); });

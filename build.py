@@ -38,7 +38,14 @@ def load_sites() -> dict:
 
 def link_item(page: dict) -> str:
     path = "/" + page["path"].strip("/") + "/"
-    return f'        <li><a href="{escape(path)}">{escape(page["title"])}</a></li>'
+    meta = page.get("meta")
+    meta_html = f'<span class="page-meta" id="{escape(meta)}-meta" hidden></span>' if meta else ""
+    return (
+        f'        <li class="page-row">'
+        f'<a class="page-name" href="{escape(path)}">{escape(page["title"])}</a>'
+        f"{meta_html}"
+        f"</li>"
+    )
 
 
 def shell(title: str, description: str, body: str) -> str:
@@ -71,6 +78,8 @@ def build_home(site: dict) -> str:
 {links}
   </ul>
 </main>
+
+<script src="/assets/home.js" defer></script>
 """
     return shell(site.get("title", "Liijjj"), site.get("description", ""), body)
 
