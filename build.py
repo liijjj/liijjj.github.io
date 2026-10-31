@@ -60,7 +60,7 @@ def shell(title: str, description: str, body: str) -> str:
 <meta name="theme-color" content="#f6f8fa" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/site.css?v=2">
 </head>
 <body>
 {body}
