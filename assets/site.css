@@ -1,154 +1,60 @@
-/* 全站共享样式：颜色变量、基础排版、首页链接、卡片与页脚 */
-
-/* 配色取自 GitHub Primer（浅色 / 深色） */
+/* 全站基础：只保留颜色和必要的列表/链接行为，其余交给浏览器原生样式 */
 
 :root {
   color-scheme: light dark;
-
   --bg: #f6f8fa;
-  --bg-elev: #ffffff;
   --fg: #1f2328;
   --fg-muted: #59636e;
-  --border: #d0d7de;
-  --border-strong: #afb8c1;
   --accent: #0969da;
   --ok: #1a7f37;
   --warn: #9a6700;
   --bad: #cf222e;
-  --radius: 10px;
-  --shadow: 0 1px 0 rgba(31, 35, 40, .04), 0 3px 6px rgba(140, 149, 159, .15);
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
-    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #0d1117;
-    --bg-elev: #161b22;
     --fg: #e6edf3;
     --fg-muted: #8b949e;
-    --border: #30363d;
-    --border-strong: #484f58;
     --accent: #2f81f7;
     --ok: #3fb950;
     --warn: #d29922;
     --bad: #f85149;
-    --shadow: 0 0 0 1px rgba(240, 246, 252, .02);
   }
 }
 
 * {
-  box-sizing: border-box;
-}
-
-html {
-  -webkit-text-size-adjust: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: var(--font-sans);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
 }
 
 a {
-  color: inherit;
-  text-decoration: none;
+  color: var(--accent);
 }
 
-h1, h2, h3, p {
-  margin: 0;
+ol,
+ul {
+  list-style-position: inside;
 }
 
 .wrap {
   width: 100%;
-  max-width: none;
-  margin: 0;
-  padding: 0 24px;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* ---------- 首页：标题 + 链接 ---------- */
-
-.home {
-  padding-top: 48px;
-}
-
-.home h1 {
-  margin: 0 0 18px;
-  font-size: 1.15rem;
-  font-weight: 600;
-  letter-spacing: -.01em;
-}
-
-.links {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 10px;
-}
-
-.links {
-  counter-reset: page;
-}
-
-.links li {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  flex-wrap: wrap;
-  counter-increment: page;
-}
-
-.links li::before {
-  content: counter(page) ".";
-  min-width: 1.3em;
-  color: var(--fg-muted);
-  font-size: .82rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.page-name {
-  color: var(--fg);
-  font-size: .95rem;
-}
-
-.page-name:hover {
-  color: var(--accent);
 }
 
 .page-meta {
   color: var(--fg-muted);
-  font-size: .82rem;
-  line-height: 1.5;
-  font-variant-numeric: tabular-nums;
 }
 
-.page-meta .is-today {
-  color: var(--bad);
-  font-weight: 600;
+.site-footer {
+  color: var(--fg-muted);
 }
 
-/* AQI 数字：颜色跟 WAQI 等级一致，天气页和首页共用 */
-.aqi-value {
-  font-weight: 650;
-}
-
+/* AQI 数字颜色，和 WAQI 等级一致 */
 .aqi-c1 { color: #1a7f37; }
 .aqi-c2 { color: #9a6700; }
 .aqi-c3 { color: #bc4c00; }
@@ -163,82 +69,4 @@ h1, h2, h3, p {
   .aqi-c4 { color: #f85149; }
   .aqi-c5 { color: #a371f7; }
   .aqi-c6 { color: #ff7b72; }
-}
-
-/* ---------- 卡片基础（天气页用） ---------- */
-
-.card {
-  background: var(--bg-elev);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-}
-
-/* ---------- 404 ---------- */
-
-.eyebrow {
-  font-size: .74rem;
-  font-weight: 650;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: var(--fg-muted);
-}
-
-.lede {
-  color: var(--fg-muted);
-  font-size: .95rem;
-  max-width: 46em;
-}
-
-.notfound {
-  min-height: 70vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 10px;
-  padding-top: 40px;
-}
-
-.notfound h1 {
-  font-size: clamp(1.8rem, 5vw, 2.6rem);
-}
-
-.button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  align-self: flex-start;
-  margin-top: 14px;
-  padding: 9px 18px;
-  border-radius: 10px;
-  background: var(--accent);
-  color: #fff;
-  font-size: .88rem;
-  font-weight: 600;
-}
-
-@media (prefers-color-scheme: dark) {
-  .button {
-    color: #0b1120;
-  }
-}
-
-/* ---------- 页脚 ---------- */
-
-.site-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 40px;
-  padding-top: 18px;
-  padding-bottom: 44px;
-  border-top: 1px solid var(--border);
-  color: var(--fg-muted);
-  font-size: .8rem;
-}
-
-.site-footer a {
-  color: var(--accent);
 }

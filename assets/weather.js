@@ -545,8 +545,7 @@
       sev.className = "sev";
       var info = SEVERITY[alert.severity] || ["提示", "#64748b"];
       sev.textContent = info[0];
-      sev.style.background = info[1];
-      if (alert.severity === "Moderate") sev.style.color = "#1f2937";
+      sev.style.color = info[1];
       summary.appendChild(sev);
       summary.appendChild(document.createTextNode(alert.headline || alert.typeName || "气象预警"));
 

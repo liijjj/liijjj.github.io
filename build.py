@@ -74,9 +74,9 @@ def build_home(site: dict) -> str:
     links = "\n".join(link_item(p) for p in pages)
     body = f"""<main class="wrap home">
   <h1>{escape(site.get("title", "Liijjj"))}</h1>
-  <ul class="links">
+  <ol class="links">
 {links}
-  </ul>
+  </ol>
 </main>
 
 <script src="/assets/home.js" defer></script>

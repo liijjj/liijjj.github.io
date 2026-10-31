@@ -115,6 +115,7 @@
       title.textContent = post.title;
 
       link.appendChild(date);
+      link.appendChild(document.createTextNode(" "));
       link.appendChild(title);
       li.appendChild(link);
       els.list.appendChild(li);

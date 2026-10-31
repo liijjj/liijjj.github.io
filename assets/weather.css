@@ -1,149 +1,37 @@
-/* 天气页专用样式，颜色变量来自 site.css */
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.muted {
-  color: var(--fg-muted);
-}
-
-.small {
-  font-size: .78rem;
-}
+/* 天气页：只保留网格布局、颜色和图表/地图的必要尺寸 */
 
 .page-head {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
   flex-wrap: wrap;
-  padding-top: 30px;
-  padding-bottom: 22px;
-}
-
-.page-head h1 {
-  margin: 6px 0 6px;
-  font-size: clamp(1.6rem, 4vw, 2.1rem);
-  letter-spacing: -.02em;
-  line-height: 1.15;
+  justify-content: space-between;
+  align-items: baseline;
 }
 
 .crumb {
-  font-size: .8rem;
   color: var(--fg-muted);
-}
-
-.crumb:hover {
-  color: var(--accent);
 }
 
 .head-actions {
   display: flex;
-  align-items: center;
-  gap: 8px;
   flex-wrap: wrap;
+  align-items: baseline;
 }
 
 .freshness {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  max-width: 100%;
-  padding: 7px 12px;
-  border-radius: 999px;
-  background: var(--bg-elev);
-  border: 1px solid var(--border);
-  color: var(--fg-muted);
-  font-size: .78rem;
-  white-space: nowrap;
-}
-
-.freshness::before {
-  content: "";
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--ok);
-  box-shadow: 0 0 0 3px rgba(5, 150, 105, .14);
-  flex: none;
-}
-
-.freshness.is-warn::before {
-  background: var(--warn);
-  box-shadow: 0 0 0 3px rgba(217, 119, 6, .16);
-}
-
-.freshness.is-bad::before {
-  background: var(--bad);
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, .16);
-}
-
-#freshness-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.refresh {
-  padding: 7px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--bg-elev);
-  color: var(--fg-muted);
-  font: inherit;
-  font-size: .78rem;
-  cursor: pointer;
-}
-
-.refresh:hover {
-  color: var(--fg);
-  border-color: var(--border-strong);
-}
-
-.refresh[disabled] {
-  opacity: .55;
-  cursor: progress;
-}
-
-.layout-field {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: .78rem;
   color: var(--fg-muted);
 }
 
-.layout-field select {
-  padding: 6px 8px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg-elev);
-  color: var(--fg);
-  font: inherit;
-  font-size: .78rem;
+.freshness.is-warn {
+  color: var(--warn);
 }
 
-/* ---------- 板块网格 ---------- */
+.freshness.is-bad {
+  color: var(--bad);
+}
 
 .board {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
-  padding-bottom: 4px;
-}
-
-.board > * {
-  min-width: 0;
 }
 
 @media (min-width: 780px) {
@@ -172,102 +60,23 @@
   }
 }
 
-@media (max-width: 779px) {
-  .board {
-    grid-template-columns: 1fr !important;
-    grid-auto-rows: auto !important;
-  }
-
-  .layout-field {
-    display: none;
-  }
-}
-
-@media (min-width: 780px) {
-  .board.cols-3 .card[data-widget="hourly"] .chart-box,
-  .board.cols-4 .card[data-widget="hourly"] .chart-box {
-    height: 200px;
-  }
-
-  .board.cols-4 .card-head h2 {
-    white-space: nowrap;
-    font-size: .95rem;
-  }
-
-  .board.cols-4 .card-head .hint {
-    display: none;
-  }
-}
-
-.card {
-  padding: 18px;
+.board > * {
+  min-width: 0;
 }
 
 .card-head {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.card-head h2 {
-  font-size: 1rem;
-  letter-spacing: -.01em;
-}
-
-.card-head .hint {
-  margin-left: auto;
-}
-
-.hint {
-  font-size: .74rem;
-  color: var(--fg-muted);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
+  flex-wrap: wrap;
+  align-items: baseline;
 }
 
 .drag {
-  flex: none;
-  width: 22px;
-  height: 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--fg-muted);
-  font-size: .9rem;
-  line-height: 1;
-  cursor: grab;
   touch-action: none;
 }
 
-.drag:hover {
-  background: var(--bg);
-  color: var(--fg);
-}
-
-.drag:active {
-  cursor: grabbing;
-}
-
-.is-ghost {
-  opacity: .35;
-}
-
-/* ---------- 实况一行 ---------- */
-
 .now-line {
-  margin: 0 0 14px;
   color: var(--fg-muted);
-  font-size: .85rem;
-  line-height: 1.65;
-  font-variant-numeric: tabular-nums;
 }
-
-/* ---------- 图表 ---------- */
 
 .chart-box {
   position: relative;
@@ -276,45 +85,24 @@
 
 .chart-box-sm {
   height: 130px;
-  margin-top: 4px;
 }
 
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
-  min-height: 4px;
 }
 
 .chip-line {
-  font-size: .76rem;
-  padding: 4px 10px;
-  border-radius: 9px;
-  background: var(--bg);
-  border: 1px solid var(--border);
   color: var(--fg-muted);
 }
 
 .chip-line b {
   color: var(--fg);
-  font-weight: 650;
-}
-
-/* ---------- 分钟级降水 ---------- */
-
-.minutely-summary {
-  font-size: 1rem;
-  font-weight: 600;
 }
 
 .minutely-summary.is-muted {
-  font-size: .86rem;
-  font-weight: 500;
   color: var(--fg-muted);
 }
-
-/* ---------- 空气质量地图 ---------- */
 
 .card[data-widget="air"] {
   display: flex;
@@ -328,107 +116,28 @@
 .map {
   height: 220px;
   min-height: 200px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  overflow: hidden;
   position: relative;
+  overflow: hidden;
   z-index: 0;
 }
 
-.map .leaflet-container {
-  font-family: inherit;
-  background: var(--bg);
-}
-
-@media (prefers-color-scheme: dark) {
-  .osm-tiles {
-    filter: brightness(.7) contrast(1.05) saturate(.8);
-  }
-}
-
 .source {
-  margin-top: 8px;
-  font-size: .7rem;
   color: var(--fg-muted);
 }
-
-/* ---------- 预警 ---------- */
 
 .alerts {
   display: grid;
-  gap: 10px;
 }
 
-.alert {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--bg);
-}
-
-.alert summary {
-  list-style: none;
-  cursor: pointer;
-  padding: 12px 14px;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  font-size: .9rem;
-  font-weight: 600;
-  line-height: 1.5;
-}
-
-.alert summary::-webkit-details-marker {
-  display: none;
-}
-
-.alert summary::after {
-  content: "展开";
-  margin-left: auto;
-  font-size: .72rem;
-  font-weight: 500;
-  color: var(--accent);
-  flex: none;
-}
-
-.alert[open] summary::after {
-  content: "收起";
-}
-
-.alert p {
-  margin: 0;
-  padding: 0 14px 14px;
-  color: var(--fg-muted);
-  font-size: .84rem;
-  line-height: 1.65;
-  white-space: pre-wrap;
-}
-
+.alert p,
 .alert time {
-  display: block;
-  padding: 0 14px 12px;
-  font-size: .72rem;
   color: var(--fg-muted);
-}
-
-.sev {
-  flex: none;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--bad);
-  color: #fff;
-  font-size: .68rem;
-  font-weight: 700;
-  line-height: 1.5;
-  margin-top: 1px;
 }
 
 .empty {
-  padding: 6px 0;
   color: var(--fg-muted);
-  font-size: .88rem;
 }
 
 .site-footer {
-  margin-top: 28px;
+  color: var(--fg-muted);
 }
