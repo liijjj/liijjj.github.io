@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>阮一峰博客</title>
+<meta name="description" content="阮一峰博客全部文章索引，按日期分页浏览，正文链接到原站。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f6f8fa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/blog.css">
+</head>
+<body>
+
+<header class="wrap page-head">
+  <a class="crumb" href="/">← 首页</a>
+  <div class="head-row">
+    <div>
+      <h1>阮一峰博客</h1>
+      <p class="lede">全部文章索引 · 正文请点标题去原站</p>
+    </div>
+    <span class="blog-count" id="count">正在载入…</span>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="blog-toolbar">
+    <div class="years" id="years"></div>
+    <div class="tools">
+      <input id="search" type="search" placeholder="搜索标题…" autocomplete="off" aria-label="搜索标题">
+      <label class="size-field">每页
+        <select id="size">
+          <option value="50" selected>50</option>
+          <option value="100">100</option>
+          <option value="200">200</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <ol class="post-list" id="list"></ol>
+  <p class="empty" id="empty" hidden>没有匹配的文章</p>
+
+  <nav class="pager" id="pager" hidden aria-label="翻页">
+    <button id="first" type="button">首页</button>
+    <button id="prev" type="button">上一页</button>
+    <span id="page-info"></span>
+    <button id="next" type="button">下一页</button>
+    <button id="last" type="button">末页</button>
+    <label class="jump">跳到 <input id="jump" type="number" min="1" inputmode="numeric"> 页</label>
+    <button id="go" type="button">跳转</button>
+  </nav>
+
+  <p class="source">数据来自 <a href="https://www.ruanyifeng.com/blog/archives.html" target="_blank" rel="noopener">ruanyifeng.com</a>，本页只做索引，文章版权归原作者所有。</p>
+</main>
+
+<script src="./app.js"></script>
+</body>
+</html>

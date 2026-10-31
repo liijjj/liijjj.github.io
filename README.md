@@ -12,6 +12,7 @@
 | --- | --- | --- |
 | 衢州天气 | 每小时第 7 分钟 | 和风天气（实况、24 小时预报、分钟级降水、预警）+ WAQI（空气质量） |
 | 可转债 | 页面直接 iframe 嵌入 | 东方财富；每天 07:33 检查申购日并推送钉钉 |
+| 阮一峰博客 | 每周一 03:17 抓取一次索引 | 阮一峰博客（只存标题、日期、原文链接） |
 
 天气页会显示**真实的数据时间**：超过 90 分钟标黄、超过 270 分钟标红，不会假装数据是新的。
 
@@ -24,13 +25,16 @@ assets/
   site.css                  全站共享样式（浅色/深色）
   home.js                   首页链接后面的实况 / 新债信息
   weather.css weather.js    天气页
+  blog.css                  阮一峰博客索引页
   favicon.svg
 monitor/weather/quzhou/     天气页 + 抓取脚本 + requirements.txt
 monitor/finance/cn/kzz/     可转债页（iframe）+ 钉钉提醒脚本
+monitor/blog/               博客索引页 + 抓取脚本 + posts.json
 index.html 404.html         由 build.py 生成，不要手改
 .github/workflows/
   fetch_weather.yml         每小时抓数据 → 推送到 data 分支
   build-pages.yml           push 后重新生成首页
+  blog-index.yml            每周一更新博客索引
   monitor-finance-cn-kzz-update.yml
 ```
 
@@ -102,7 +106,8 @@ python -m http.server 8000
 ## 技术说明
 
 - 纯静态页面，没有构建工具、没有框架。
-- 首页是标题 + 两行链接，链接后面会自动补上当前天气和新债日历，内容铺满整个宽度。
+- 首页是标题 + 带序号的链接列表，链接后面会自动补上当前天气和新债日历，内容铺满整个宽度。
+- 阮一峰博客页只存标题、日期和原文链接，正文一律跳回原站；索引每周一自动刷新。
 - 配色使用 GitHub Primer 的浅色 / 深色变量。
 - Chart.js 4.5.0、Leaflet 1.9.4 走 cdnjs，锁定版本并带 SRI 校验。
 - `.nojekyll` 让 GitHub Pages 跳过 Jekyll 处理。

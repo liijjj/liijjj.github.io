@@ -1,0 +1,259 @@
+/* 阮一峰博客索引页 */
+
+.page-head {
+  padding-top: 30px;
+  padding-bottom: 8px;
+}
+
+.crumb {
+  font-size: .8rem;
+  color: var(--fg-muted);
+}
+
+.crumb:hover {
+  color: var(--accent);
+}
+
+.head-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.page-head h1 {
+  margin: 0 0 6px;
+  font-size: clamp(1.6rem, 4vw, 2.1rem);
+  letter-spacing: -.02em;
+  line-height: 1.15;
+}
+
+.blog-count {
+  font-size: .8rem;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 工具栏 ---------- */
+
+.blog-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 14px 0 10px;
+}
+
+.years {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.years button {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: .76rem;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.years button:hover {
+  color: var(--fg);
+  border-color: var(--border-strong);
+}
+
+.years button[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+@media (prefers-color-scheme: dark) {
+  .years button[aria-pressed="true"] {
+    color: #0d1117;
+  }
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+#search {
+  width: 200px;
+  max-width: 100%;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--fg);
+  font: inherit;
+  font-size: .82rem;
+}
+
+#search:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.size-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .78rem;
+  color: var(--fg-muted);
+}
+
+.size-field select {
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--fg);
+  font: inherit;
+  font-size: .78rem;
+}
+
+/* ---------- 文章列表 ---------- */
+
+.post-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+}
+
+.post-list li {
+  border-bottom: 1px solid var(--border);
+}
+
+.post-list a {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 9px 4px;
+  transition: background .12s ease;
+}
+
+.post-list a:hover {
+  background: var(--bg-elev);
+}
+
+.post-date {
+  flex: none;
+  width: 88px;
+  color: var(--fg-muted);
+  font-size: .78rem;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.post-title {
+  color: var(--fg);
+  font-size: .9rem;
+  line-height: 1.55;
+}
+
+.post-list a:hover .post-title {
+  color: var(--accent);
+}
+
+.empty {
+  padding: 30px 0;
+  color: var(--fg-muted);
+  font-size: .9rem;
+}
+
+/* ---------- 翻页 ---------- */
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 18px 0 0;
+  font-size: .8rem;
+  color: var(--fg-muted);
+}
+
+.pager button {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--fg);
+  font: inherit;
+  font-size: .8rem;
+  cursor: pointer;
+}
+
+.pager button:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.pager button:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.jump input {
+  width: 68px;
+  padding: 5px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--fg);
+  font: inherit;
+  font-size: .8rem;
+  text-align: center;
+}
+
+.source {
+  margin: 16px 0 40px;
+  font-size: .72rem;
+  color: var(--fg-muted);
+}
+
+.source a {
+  color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .post-list a {
+    gap: 10px;
+  }
+
+  .post-date {
+    width: 74px;
+    font-size: .72rem;
+  }
+
+  .post-title {
+    font-size: .86rem;
+  }
+
+  #search {
+    width: 100%;
+  }
+
+  .tools {
+    width: 100%;
+  }
+}

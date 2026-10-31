@@ -103,11 +103,24 @@ h1, h2, h3, p {
   gap: 10px;
 }
 
+.links {
+  counter-reset: page;
+}
+
 .links li {
   display: flex;
   align-items: baseline;
   gap: 10px;
   flex-wrap: wrap;
+  counter-increment: page;
+}
+
+.links li::before {
+  content: counter(page) ".";
+  min-width: 1.3em;
+  color: var(--fg-muted);
+  font-size: .82rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .page-name {

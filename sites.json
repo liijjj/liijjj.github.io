@@ -13,6 +13,11 @@
       "title": "可转债",
       "description": "可转债的申购、中签与上市信息，数据来自东方财富。",
       "meta": "kzz"
+    },
+    {
+      "path": "monitor/blog/",
+      "title": "阮一峰博客",
+      "description": "阮一峰博客的全部文章索引，按日期分页浏览。"
     }
   ]
 }
