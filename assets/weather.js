@@ -318,18 +318,20 @@
             callbacks: {
               title: function (items) {
                 var h = hoursCache[items[0].dataIndex];
-                return h ? stamp(h.fxTime) + " " + h.text : "";
+                return h ? stamp(h.fxTime) : "";
               },
               label: function (item) {
+                // 气温和降水两组数据共用同一个 tooltip，只在第一组输出明细，
+                // 否则同样的四行会出现两次。
+                if (item.datasetIndex !== 0) return undefined;
                 var h = hoursCache[item.dataIndex];
-                if (!h) return "";
-                var lines = [
+                if (!h) return undefined;
+                return [
                   h.temp + "°C · " + h.text,
                   "降水 " + h.precip + " mm" + (h.pop != null ? " · 概率 " + h.pop + "%" : ""),
                   h.windDir + " " + h.windScale + " 级",
                   "湿度 " + h.humidity + "%"
                 ];
-                return lines;
               }
             }
           }

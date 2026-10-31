@@ -126,6 +126,11 @@ h1, h2, h3, p {
   font-variant-numeric: tabular-nums;
 }
 
+.page-meta .is-today {
+  color: var(--bad);
+  font-weight: 600;
+}
+
 /* AQI 数字：颜色跟 WAQI 等级一致，天气页和首页共用 */
 .aqi-value {
   font-weight: 650;

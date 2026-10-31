@@ -158,11 +158,21 @@
       });
 
       var days = Object.keys(groups).sort();
-      var shown = days.slice(0, 3).map(function (day) {
-        return day + " " + weekday(day) + " " + groups[day].join("、");
+      el.textContent = "";
+
+      days.slice(0, 3).forEach(function (day, index) {
+        if (index > 0) el.appendChild(document.createTextNode("；"));
+
+        var segment = document.createElement("span");
+        segment.className = "kzz-day" + (day === today ? " is-today" : "");
+        segment.textContent = day + " " + weekday(day) + " " + groups[day].join("、");
+        el.appendChild(segment);
       });
 
-      el.textContent = shown.join("；") + (days.length > 3 ? "；…" : "");
+      if (days.length > 3) {
+        el.appendChild(document.createTextNode("；…"));
+      }
+
       el.hidden = false;
     }).catch(function () {
       /* 保持隐藏 */
