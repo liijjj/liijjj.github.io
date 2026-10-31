@@ -149,6 +149,7 @@
     if (at == null) at = toMs(state.meta && state.meta.generatedAt);
     updatedAt = at;
     updateFreshness();
+    updateTitle();
 
     var key = (state.weather && state.weather.updateTime) || "";
     if (key && key === lastWeatherKey && charts.hourly) return;
@@ -513,6 +514,11 @@
       return raw.data;
     }
     return null;
+  }
+
+  function updateTitle() {
+    var air = waqiPayload();
+    document.title = air ? "衢州天气 " + air.aqi : "衢州天气";
   }
 
   var SEVERITY = {
