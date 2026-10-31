@@ -1,4 +1,4 @@
-/* 博客索引页：标题居中，右侧预览面板 */
+/* 博客索引页：标题居中，只保留必要的排列和颜色 */
 
 .crumb {
   display: block;
@@ -22,37 +22,6 @@
   align-items: baseline;
 }
 
-.reader {
-  display: grid;
-  grid-template-columns: 1fr;
-}
-
-.reader.with-pane {
-  grid-template-columns: 1.4fr 1fr;
-}
-
-.reader-main {
-  min-width: 0;
-}
-
-.reader-pane {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  position: sticky;
-  top: 0;
-  border-left: 1px solid var(--border);
-}
-
-.reader-pane[hidden] {
-  display: none;
-}
-
-#pane-frame {
-  width: 100%;
-  flex: 1 1 auto;
-}
-
 .post-date {
   color: var(--fg-muted);
 }
@@ -63,18 +32,4 @@
 
 .source {
   color: var(--fg-muted);
-}
-
-@media (max-width: 900px) {
-  .reader.with-pane {
-    grid-template-columns: 1fr;
-  }
-
-  .reader-pane {
-    position: fixed;
-    inset: 0;
-    z-index: 10;
-    background: var(--bg);
-    border-left: 0;
-  }
 }

@@ -27,48 +27,8 @@
     prev: document.getElementById("prev"),
     next: document.getElementById("next"),
     last: document.getElementById("last"),
-    go: document.getElementById("go"),
-    reader: document.getElementById("reader"),
-    pane: document.getElementById("pane"),
-    paneFrame: document.getElementById("pane-frame"),
-    paneTitle: document.getElementById("pane-title"),
-    paneOriginal: document.getElementById("pane-original"),
-    paneClose: document.getElementById("pane-close"),
-    paneToggle: document.getElementById("pane-toggle")
+    go: document.getElementById("go")
   };
-
-  var paneOpen = false;
-
-  function setPane(open, persist) {
-    paneOpen = open;
-    els.reader.classList.toggle("with-pane", open);
-    els.pane.hidden = !open;
-    els.paneToggle.textContent = open ? "关闭预览" : "打开预览";
-    if (persist) {
-      try {
-        localStorage.setItem("blog-pane", open ? "1" : "0");
-      } catch (err) {
-        /* 忽略 */
-      }
-    }
-    if (!open) {
-      els.paneFrame.hidden = true;
-      els.paneFrame.src = "about:blank";
-      els.paneTitle.textContent = "点击左侧标题预览";
-      els.paneOriginal.hidden = true;
-    }
-  }
-
-  function openPost(url, title) {
-    els.paneTitle.textContent = title;
-    els.paneOriginal.href = url;
-    els.paneOriginal.hidden = false;
-    els.paneFrame.hidden = false;
-    if (els.paneFrame.src !== url) {
-      els.paneFrame.src = url;
-    }
-    setPane(true, true);
-  }
 
   function pages() {
     return Math.max(1, Math.ceil(state.filtered.length / state.size));
@@ -201,46 +161,6 @@
         if (isFinite(value)) goPage(value);
       }
     });
-
-    els.paneToggle.addEventListener("click", function () {
-      setPane(!paneOpen, true);
-    });
-
-    els.paneClose.addEventListener("click", function () {
-      setPane(false, true);
-    });
-
-    els.list.addEventListener("click", function (event) {
-      var link = event.target.closest("a");
-      if (!link) return;
-      if (event.defaultPrevented || event.button !== 0 ||
-          event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-        return;
-      }
-      var title = link.querySelector(".post-title");
-      event.preventDefault();
-      openPost(link.href, title ? title.textContent : link.href);
-    });
-
-    var savedPane = null;
-    try {
-      savedPane = localStorage.getItem("blog-pane");
-    } catch (err) {
-      savedPane = null;
-    }
-    setPane(
-      savedPane === null ? window.innerWidth > 900 : savedPane === "1",
-      false
-    );
-
-    if (window.matchMedia) {
-      var narrow = window.matchMedia("(max-width: 900px)");
-      var onChange = function (event) {
-        if (event.matches && paneOpen) setPane(false, false);
-      };
-      if (narrow.addEventListener) narrow.addEventListener("change", onChange);
-      else if (narrow.addListener) narrow.addListener(onChange);
-    }
 
     fetch(DATA_URL, { cache: "no-cache" })
       .then(function (res) {

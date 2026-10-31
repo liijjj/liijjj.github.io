@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/site.css?v=3">
-<link rel="stylesheet" href="/assets/blog.css?v=5">
+<link rel="stylesheet" href="/assets/blog.css?v=3">
 </head>
 <body>
 
@@ -31,38 +31,24 @@
         <option value="200">200</option>
       </select>
     </label>
-    <button id="pane-toggle" type="button">打开预览</button>
   </div>
 
-  <div class="reader" id="reader">
-    <div class="reader-main">
-      <ol class="post-list" id="list"></ol>
-      <p class="empty" id="empty" hidden>没有匹配的文章</p>
+  <ol class="post-list" id="list"></ol>
+  <p class="empty" id="empty" hidden>没有匹配的文章</p>
 
-      <nav class="pager" id="pager" hidden aria-label="翻页">
-        <button id="first" type="button">首页</button>
-        <button id="prev" type="button">上一页</button>
-        <span id="page-info"></span>
-        <button id="next" type="button">下一页</button>
-        <button id="last" type="button">末页</button>
-        <label class="jump">跳到 <input id="jump" type="number" min="1" inputmode="numeric"> 页</label>
-        <button id="go" type="button">跳转</button>
-      </nav>
+  <nav class="pager" id="pager" hidden aria-label="翻页">
+    <button id="first" type="button">首页</button>
+    <button id="prev" type="button">上一页</button>
+    <span id="page-info"></span>
+    <button id="next" type="button">下一页</button>
+    <button id="last" type="button">末页</button>
+    <label class="jump">跳到 <input id="jump" type="number" min="1" inputmode="numeric"> 页</label>
+    <button id="go" type="button">跳转</button>
+  </nav>
 
-      <p class="source">数据来自 <a href="https://www.ruanyifeng.com/blog/archives.html" target="_blank" rel="noopener">ruanyifeng.com</a>，本页只做索引，文章版权归原作者所有。</p>
-    </div>
-
-    <aside class="reader-pane" id="pane" hidden>
-      <div class="pane-head">
-        <span id="pane-title">点击左侧标题预览</span>
-        <a id="pane-original" href="#" target="_blank" rel="noopener" hidden>原文 ↗</a>
-        <button id="pane-close" type="button">关闭</button>
-      </div>
-      <iframe id="pane-frame" title="博客内容预览" src="about:blank"></iframe>
-    </aside>
-  </div>
+  <p class="source">数据来自 <a href="https://www.ruanyifeng.com/blog/archives.html" target="_blank" rel="noopener">ruanyifeng.com</a>，本页只做索引，文章版权归原作者所有。</p>
 </main>
 
-<script src="./app.js?v=4"></script>
+<script src="./app.js?v=3"></script>
 </body>
 </html>
